@@ -9,6 +9,7 @@
 #define S enum triefort_status
 #define TF struct triefort
 #define CFG struct triefort_cfg
+#define HCFG struct triefort_hash_cfg
 #define ITER struct triefort_iter
 
 #define PANIC() do { \
@@ -59,4 +60,8 @@ S triefort_init(const char * const path, const CFG * const cfg) {
   free((void*)oldcwd);
 
   return triefort_ok;
+}
+
+S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const path) {
+  return triefort_err_PANIC;
 }

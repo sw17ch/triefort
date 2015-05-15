@@ -109,8 +109,8 @@ enum triefort_status triefort_init(
  *    - triefort_err_not_a_triefort - the path is not a triefort
  */
 enum triefort_status triefort_open(
-    struct triefort * fort,
-    struct triefort_hash_cfg * hashcfg,
+    struct triefort ** const fort,
+    const struct triefort_hash_cfg * const hashcfg,
     const char * const path);
 
 /**
