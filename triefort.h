@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 
 /**
  * enum triefort_status
@@ -12,7 +13,7 @@
 enum triefort_status {
   triefort_ok,
   triefort_err_no_fort_at_path,
-}
+};
 
 /**
  * struct triefort
@@ -104,6 +105,30 @@ enum triefort_status triefort_open(
     const char * const path);
 
 /**
+ * triefort_close
+ *
+ * Close a triefort. No more calls with `fort` can be made until it is
+ * reopened.
+ *
+ * Returns
+ *    - triefort_ok - the `fort` was closed
+ */
+enum triefort_status triefort_close(
+    struct triefort * fort);
+
+/**
+ * triefort_destroy
+ *
+ * Remove all traces of the triefort located at `path` from the filesystem.
+ *
+ * Returns
+ *    - triefort_ok - the triefort at `path` was destroyed.
+ *    - triefort_err_no_fort_at_path - `path` does not reference a triefort.
+ */
+enum triefort_status triefort_destroy(
+    const char * const path);
+
+/**
  * triefort_config_get
  *
  * Retrieve the configuration from a triefort. `cfg` will be a copy of the
@@ -149,6 +174,17 @@ enum triefort_status triefort_get_stream(
     FILE ** hdl);
 
 /**
+ * triefort_get_stream_close
+ *
+ * Closes a file stream opened from the triefort.
+ *
+ * Returns
+ *    - triefort_ok - the file was successfully closed
+ */
+enum triefort_status triefort_get_stream_close(
+    FILE * hdl);
+
+/**
  * triefort_get
  *
  * Read the content identified by `hash` into `buffer`. At most `bufferlen`
@@ -187,18 +223,6 @@ enum triefort_status triefort_set(
     size_t hashlen,
     void * buffer,
     size_t bufferlen);
-
-/**
- * triefort_close
- *
- * Closes a file stream opened from the triefort.
- *
- * Returns
- *    - triefort_ok - the file was successfully closed
- */
-enum triefort_status triefort_close_hash(
-    struct triefort * fort,
-    FILE ** hdl);
 
 /**
  * triefort_iter_create
