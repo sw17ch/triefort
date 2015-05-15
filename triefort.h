@@ -135,7 +135,7 @@ void triefort_close(
  *    - triefort_err_not_a_triefort - `path` does not reference a triefort.
  */
 enum triefort_status triefort_destroy(
-    const char * const path);
+    char * const path);
 
 /**
  * triefort_config_get
@@ -147,8 +147,8 @@ enum triefort_status triefort_destroy(
  *    - triefort_ok - the configuration was copied successfully
  */
 enum triefort_status triefort_config_get(
-    struct triefort * fort,
-    struct triefort_cfg * cfg);
+    struct triefort * const fort,
+    struct triefort_cfg * const cfg);
 
 /**
  * triefort_info
@@ -161,10 +161,10 @@ enum triefort_status triefort_config_get(
  *    - triefort_err_does_not_exist - the hash does not exist in the triefort.
  */
 enum triefort_status triefort_info(
-    struct triefort * fort,
-    void * hash,
-    size_t hashlen,
-    struct triefort_info * info);
+    struct triefort * const fort,
+    const void * const hash,
+    const size_t hashlen,
+    struct triefort_info * const info);
 
 /**
  * triefort_get_stream
@@ -177,10 +177,10 @@ enum triefort_status triefort_info(
  *    - triefort_err_does_not_exist - `hash` does not reference a real path
  */
 enum triefort_status triefort_get_stream(
-    struct triefort * fort,
-    void * hash,
-    size_t hashlen,
-    FILE ** hdl);
+    struct triefort * const fort,
+    const void * const hash,
+    const size_t hashlen,
+    FILE ** const hdl);
 
 /**
  * triefort_get_stream_close
@@ -191,7 +191,7 @@ enum triefort_status triefort_get_stream(
  *    - triefort_ok - the file was successfully closed
  */
 enum triefort_status triefort_get_stream_close(
-    FILE * hdl);
+    FILE * const hdl);
 
 /**
  * triefort_get
@@ -207,7 +207,7 @@ enum triefort_status triefort_get_stream_close(
  *    - triefort_err_does_not_exist - the hash does not exist in the triefort.
  */
 enum triefort_status triefort_get(
-    struct triefort * fort,
+    struct triefort * const fort,
     void * hash,
     size_t hashlen,
     void * buffer,
@@ -215,23 +215,28 @@ enum triefort_status triefort_get(
     size_t * readlen);
 
 /**
- * triefort_set
+ * triefort_put
  *
- * Write the content in `buffer` to the triefort. The hash of the content will
- * be stored in `hash`.
+ * Write the content in `buffer` to the triefort. The hash of `key` will be the
+ * identifier for this content in the triefort.
+ *
+ * If `key` is `NULL`, the hash of `buffer` will be used as the triefort
+ * identifier instead.
  *
  * Returns
- *    - triefort_ok - `buffer` has been written to the triefor and `hash`
- *      contains the hash of the buffer.
+ *    - triefort_ok - `buffer` has been written to the triefort and `hash`
+ *      contains the hash of `key`.
  *    - triefort_err_duplicate_hash - the hash of the content is already
  *      present in the trie.
  */
-enum triefort_status triefort_set(
+enum triefort_status triefort_put(
     struct triefort * fort,
-    void * hash,
-    size_t hashlen,
+    void * key,
+    size_t keylen,
     void * buffer,
-    size_t bufferlen);
+    size_t bufferlen,
+    void * hash,
+    size_t hashlen);
 
 /**
  * triefort_iter_create
