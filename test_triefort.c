@@ -85,12 +85,36 @@ TEST triefort_close__runs_without_segfaulting(void) {
   PASS();
 }
 
+TEST triefort_destroy__removes_the_triefort(void) {
+  CHECK_CALL(create_test_triefort());
+  enum triefort_status s = triefort_destroy(TEST_TRIEFORT_PATH);
+  ASSERT_EQ_FMT(triefort_ok, s, "%d");
+  ASSERT_FALSE(dir_exists(TEST_TRIEFORT_PATH));
+
+  PASS();
+}
+
+TEST triefort_destroy__tries_to_make_sure_the_dir_is_a_triefort(void) {
+  if (0 != mkdir("__non_triefort_path", 0755)) {
+    FAIL();
+  }
+
+  enum triefort_status s = triefort_destroy("__non_triefort_path");
+  ASSERT_EQ_FMT(triefort_err_not_a_triefort, s, "%d");
+  ASSERT(dir_exists("__non_triefort_path"));
+  recursive_remove("__non_triefort_path");
+
+  PASS();
+}
+
 SUITE(suite_triefort) {
   RUN_TEST(triefort_init__creates_triefort_at_path);
   RUN_TEST(triefort_init__creates_triefort_config_under_path);
   RUN_TEST(triefort_open__is_okay_when_triefort_exists);
   RUN_TEST(triefort_open__populates_internal_config);
   RUN_TEST(triefort_close__runs_without_segfaulting);
+  RUN_TEST(triefort_destroy__removes_the_triefort);
+  RUN_TEST(triefort_destroy__tries_to_make_sure_the_dir_is_a_triefort);
 }
 
 GREATEST_MAIN_DEFS();

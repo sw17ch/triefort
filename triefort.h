@@ -17,6 +17,7 @@ enum triefort_status {
   triefort_err_PANIC,
   triefort_err_path_already_exists,
   triefort_err_path_could_not_be_created,
+  triefort_err_path_could_not_be_destroyed,
   triefort_err_config_could_not_be_created,
   triefort_err_config_could_not_be_opened,
   triefort_err_not_a_triefort,

@@ -3,6 +3,8 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fts.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -23,6 +25,9 @@
 
 static S store_cfg(const CFG * const cfg, const char * const path);
 static S load_cfg(CFG * const cfg, const char * const path);
+static bool dir_exists(const char * const path);
+static bool file_exists(const char * const path);
+static int recursive_remove(const char * const path);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
   assert(cfg->hash_len >= cfg->depth);
@@ -86,6 +91,34 @@ void triefort_close(TF * fort) {
   free(fort);
 }
 
+S triefort_destroy(char * const path) {
+  S s = triefort_ok;
+
+  char * oldcwd = getcwd(NULL, 0);
+  {
+    if (dir_exists(path)) {
+      PANIC_IF(chdir(path) != 0);
+
+      if (!file_exists("config")) {
+        s = triefort_err_not_a_triefort;
+      }
+
+      PANIC_IF(chdir(oldcwd) != 0);
+    } else {
+      return triefort_err_not_a_triefort;
+    }
+
+    if (s == triefort_ok) {
+      if (0 != recursive_remove(path)) {
+        s = triefort_err_path_could_not_be_destroyed;
+      }
+    }
+  }
+  free((void *)oldcwd);
+
+  return s;
+}
+
 static S store_cfg(const CFG * const cfg, const char * const path) {
   FILE * cfghdl = fopen(path, "w");
   if (NULL == cfghdl) {
@@ -120,4 +153,62 @@ static S load_cfg(CFG * const cfg, const char * const path) {
   }
 
   return triefort_ok;
+}
+
+static bool dir_exists(const char * const path) {
+  struct stat s;
+
+  if (0 == stat(path, &s)) {
+    if (S_ISDIR(s.st_mode)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static bool file_exists(const char * const path) {
+  struct stat s;
+
+  if (0 == stat(path, &s)) {
+    if (S_ISREG(s.st_mode)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static int recursive_remove(const char * const path) {
+  int e = 0;
+
+  if (dir_exists(path)) {
+    FTSENT * ent;
+    const char * const ptrs[] = { path, 0 };
+    const int fts_options = FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV;
+    FTS * fts = fts_open((char * const *)ptrs, fts_options, NULL);
+
+    while((ent = fts_read(fts)) && 0 == e) {
+      switch(ent->fts_info) {
+      case FTS_NS: case FTS_DNR: case FTS_ERR:
+        fprintf(stderr, "%s: fts_read error: %s\n",
+            ent->fts_accpath, strerror(ent->fts_errno));
+        e = ent->fts_errno;
+        break;
+      case FTS_D: case FTS_DC: case FTS_DOT: case FTS_NSOK:
+        break;
+      case FTS_DP: case FTS_F: case FTS_SL: case FTS_SLNONE: case FTS_DEFAULT:
+        if (0 != remove(ent->fts_accpath)) {
+          fprintf(stderr, "Unable to remove %s. %s\n",
+              ent->fts_accpath,
+              strerror(ent->fts_errno));
+          e = ent->fts_errno;
+        }
+        break;
+      }
+    }
+    fts_close(fts);
+  }
+
+  return e;
 }
