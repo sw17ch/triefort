@@ -73,11 +73,24 @@ TEST triefort_open__populates_internal_config(void) {
   PASS();
 }
 
+TEST triefort_close__runs_without_segfaulting(void) {
+  CHECK_CALL(create_test_triefort());
+
+  struct triefort * fort = NULL;
+  enum triefort_status s = triefort_open(&fort, &hashcfg, TEST_TRIEFORT_PATH);
+  ASSERT_EQ_FMT(triefort_ok, s, "%d");
+
+  triefort_close(fort);
+
+  PASS();
+}
+
 SUITE(suite_triefort) {
   RUN_TEST(triefort_init__creates_triefort_at_path);
   RUN_TEST(triefort_init__creates_triefort_config_under_path);
   RUN_TEST(triefort_open__is_okay_when_triefort_exists);
   RUN_TEST(triefort_open__populates_internal_config);
+  RUN_TEST(triefort_close__runs_without_segfaulting);
 }
 
 GREATEST_MAIN_DEFS();

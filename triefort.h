@@ -121,11 +121,8 @@ enum triefort_status triefort_open(
  *
  * Close a triefort. No more calls with `fort` can be made until it is
  * reopened.
- *
- * Returns
- *    - triefort_ok - the `fort` was closed
  */
-enum triefort_status triefort_close(
+void triefort_close(
     struct triefort * fort);
 
 /**

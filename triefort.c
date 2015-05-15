@@ -76,6 +76,14 @@ S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const
   return triefort_ok;
 }
 
+void triefort_close(TF * fort) {
+  assert(fort);
+  assert(fort->path);
+
+  free((void *)fort->path);
+  free(fort);
+}
+
 static S store_cfg(const CFG * const cfg, const char * const path) {
   FILE * cfghdl = fopen(path, "w");
   if (NULL == cfghdl) {
