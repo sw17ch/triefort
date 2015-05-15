@@ -1,4 +1,4 @@
-# triehash
+# triefort
 
 A library for storing data in a file system using prefix
 trees of arbitrary hashes.
