@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#define MAX_LEN_HASH_NAME 64
+
 /**
  * enum triefort_status
  *
@@ -12,6 +14,10 @@
  */
 enum triefort_status {
   triefort_ok,
+  triefort_err_PANIC,
+  triefort_err_path_already_exists,
+  triefort_err_path_could_not_be_created,
+  triefort_err_config_could_not_be_created,
   triefort_err_no_fort_at_path,
 };
 
@@ -33,6 +39,9 @@ struct triefort_cfg {
 
   /* The number of bytes each hash contains. */
   uint16_t hash_len;
+
+  /* The name of the hash implementation. */
+  char hash_name[MAX_LEN_HASH_NAME];
 };
 
 /**
@@ -83,11 +92,11 @@ struct triefort_iter;
  *
  * Returns
  *    - triefort_ok - the triefort was created successfully
- *    - triefort_err_already_exists - the specified path already exists
+ *    - triefort_err_path_already_exists - the specified path already exists
  */
 enum triefort_status triefort_init(
     const char * const path,
-    struct triefort_cfg * cfg);
+    const struct triefort_cfg * const cfg);
 
 /**
  * triefort_open
