@@ -25,6 +25,8 @@ static S store_cfg(const CFG * const cfg, const char * const path);
 static S load_cfg(CFG * const cfg, const char * const path);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
+  assert(cfg->hash_len >= cfg->depth);
+
   int mode = (S_IRUSR | S_IWUSR | S_IXUSR) |
              (S_IRGRP |           S_IXGRP) |
              (S_IROTH |           S_IXOTH);
