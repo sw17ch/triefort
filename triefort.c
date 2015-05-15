@@ -1,7 +1,6 @@
 #include "triefort.h"
 #include "triefort_internal_types.h"
 
-#include <assert.h>
 #include <errno.h>
 #include <fts.h>
 #include <stdbool.h>
@@ -21,7 +20,13 @@
   return triefort_err_PANIC; \
 } while(0)
 #define PANIC_IF(COND) do { if (COND) { PANIC(); } } while(0)
-#define CHECK_CALL(CALL) do { S s; if (triefort_ok != (s = (CALL))) { return s; } } while(0) 
+#define CHECK_CALL(CALL) do { \
+  S s; if (triefort_ok != (s = (CALL))) { return s; } \
+} while(0)
+
+#define NULLCHK(ARG) do { \
+  if (NULL == ARG) { return triefort_err_NULL_PTR; } \
+} while(0)
 
 static S store_cfg(const CFG * const cfg, const char * const path);
 static S load_cfg(CFG * const cfg, const char * const path);
@@ -62,9 +67,9 @@ S triefort_init(const char * const path, const CFG * const cfg) {
 }
 
 S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const path) {
-  assert(fort);
-  assert(hashcfg);
-  assert(path);
+  NULLCHK(fort);
+  NULLCHK(hashcfg);
+  NULLCHK(path);
 
   const char * oldcwd = getcwd(NULL, 0);
   {
@@ -101,12 +106,14 @@ S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const
   return s;
 }
 
-void triefort_close(TF * fort) {
-  assert(fort);
-  assert(fort->path);
+S triefort_close(TF * fort) {
+  NULLCHK(fort);
+  NULLCHK(fort->path);
 
   free((void *)fort->path);
   free(fort);
+
+  return triefort_ok;
 }
 
 S triefort_destroy(char * const path) {
@@ -137,7 +144,19 @@ S triefort_destroy(char * const path) {
   return s;
 }
 
+S triefort_config_get(TF * const fort, CFG * const cfg) {
+  NULLCHK(fort);
+  NULLCHK(cfg);
+
+  memcpy(cfg, &fort->cfg, sizeof(*cfg));
+
+  return triefort_ok;
+}
+
 static S store_cfg(const CFG * const cfg, const char * const path) {
+  NULLCHK(cfg);
+  NULLCHK(path);
+
   FILE * cfghdl = fopen(path, "w");
   if (NULL == cfghdl) {
     return triefort_err_config_could_not_be_created;
@@ -148,7 +167,6 @@ static S store_cfg(const CFG * const cfg, const char * const path) {
 
     size_t nlen = strnlen(cfg->hash_name, sizeof(cfg->hash_name) - 1);
     uint8_t nlenb = nlen;
-    assert(MAX_LEN_HASH_NAME >= nlen);
 
     PANIC_IF(1 != fwrite(&nlenb, sizeof(nlenb), 1, cfghdl));
     PANIC_IF(nlen != fwrite(&cfg->hash_name, 1, nlen, cfghdl));
@@ -159,6 +177,9 @@ static S store_cfg(const CFG * const cfg, const char * const path) {
 }
 
 static S load_cfg(CFG * const cfg, const char * const path) {
+  NULLCHK(cfg);
+  NULLCHK(path);
+
   FILE * cfghdl = fopen(path, "r");
   if (NULL == cfghdl) {
     return triefort_err_config_could_not_be_opened;
@@ -176,7 +197,7 @@ static S load_cfg(CFG * const cfg, const char * const path) {
 }
 
 static bool validate_cfg(const CFG * const cfg) {
-  assert(cfg);
+  NULLCHK(cfg);
 
   bool valid = ((cfg->depth > 0) &
                 (cfg->width > 0) &
@@ -186,6 +207,8 @@ static bool validate_cfg(const CFG * const cfg) {
 }
 
 static bool dir_exists(const char * const path) {
+  NULLCHK(path);
+
   struct stat s;
 
   if (0 == stat(path, &s)) {
@@ -198,6 +221,8 @@ static bool dir_exists(const char * const path) {
 }
 
 static bool file_exists(const char * const path) {
+  NULLCHK(path);
+
   struct stat s;
 
   if (0 == stat(path, &s)) {
@@ -210,6 +235,8 @@ static bool file_exists(const char * const path) {
 }
 
 static int recursive_remove(const char * const path) {
+  if (NULL == path) { return 0; }
+
   int e = 0;
 
   if (dir_exists(path)) {

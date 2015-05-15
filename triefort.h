@@ -15,6 +15,7 @@
 enum triefort_status {
   triefort_ok,
   triefort_err_PANIC,
+  triefort_err_NULL_PTR,
   triefort_err_invalid_config,
   triefort_err_path_already_exists,
   triefort_err_path_could_not_be_created,
@@ -128,7 +129,7 @@ enum triefort_status triefort_open(
  * Close a triefort. No more calls with `fort` can be made until it is
  * reopened.
  */
-void triefort_close(
+enum triefort_status triefort_close(
     struct triefort * fort);
 
 /**
