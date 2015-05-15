@@ -15,6 +15,7 @@
 enum triefort_status {
   triefort_ok,
   triefort_err_PANIC,
+  triefort_err_invalid_config,
   triefort_err_path_already_exists,
   triefort_err_path_could_not_be_created,
   triefort_err_path_could_not_be_destroyed,
@@ -36,10 +37,13 @@ struct triefort;
  * Configuration parameters for a triefort.
  */
 struct triefort_cfg {
-  /* The maximum directory depth a triefort can use on disk. */
+  /* The maximum directory depth a triefort can use on disk. Must be > 0. */
   uint8_t depth;
 
-  /* The number of bytes each hash contains. */
+  /* The number of bytes to use per directory. Must be > 0. */
+  uint8_t width;
+
+  /* The number of bytes each hash contains. Must be >= (depth * width). */
   uint16_t hash_len;
 
   /* The name of the hash implementation. */

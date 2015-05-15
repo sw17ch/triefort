@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #define TEST_TRIEFORT_PATH "__triefort_test_dir"
+#define TEST_TRIE_WIDTH 2
 #define TEST_TRIE_DEPTH 4
 #define TEST_HASH_LEN 20
 #define TEST_HASH_NAME "testhash"
@@ -28,6 +29,7 @@ static void destroy_triefort(void);
 
 const struct triefort_cfg testcfg = {
     .depth = TEST_TRIE_DEPTH,
+    .width = TEST_TRIE_WIDTH,
     .hash_len = TEST_HASH_LEN,
     .hash_name = TEST_HASH_NAME,
 };
@@ -46,6 +48,39 @@ TEST triefort_init__creates_triefort_at_path(void) {
 TEST triefort_init__creates_triefort_config_under_path(void) {
   CHECK_CALL(create_test_triefort());
   ASSERT(file_exists(TEST_TRIEFORT_PATH "/config"));
+  PASS();
+}
+
+TEST triefort_init__validates_the_config(void) {
+  struct triefort_cfg badcfg = {
+      .depth = 0,
+      .width = TEST_TRIE_WIDTH,
+      .hash_len = TEST_HASH_LEN,
+      .hash_name = TEST_HASH_NAME,
+  };
+
+  ASSERT_EQ_FMT(
+      triefort_err_invalid_config,
+      triefort_init(TEST_TRIEFORT_PATH, &badcfg),
+      "%d");
+
+  badcfg.depth = 1;
+  badcfg.width = 0;
+
+  ASSERT_EQ_FMT(
+      triefort_err_invalid_config,
+      triefort_init(TEST_TRIEFORT_PATH, &badcfg),
+      "%d");
+
+  badcfg.depth = 2;
+  badcfg.width = 1;
+  badcfg.hash_len = 1;
+
+  ASSERT_EQ_FMT(
+      triefort_err_invalid_config,
+      triefort_init(TEST_TRIEFORT_PATH, &badcfg),
+      "%d");
+
   PASS();
 }
 
@@ -110,6 +145,7 @@ TEST triefort_destroy__tries_to_make_sure_the_dir_is_a_triefort(void) {
 SUITE(suite_triefort) {
   RUN_TEST(triefort_init__creates_triefort_at_path);
   RUN_TEST(triefort_init__creates_triefort_config_under_path);
+  RUN_TEST(triefort_init__validates_the_config);
   RUN_TEST(triefort_open__is_okay_when_triefort_exists);
   RUN_TEST(triefort_open__populates_internal_config);
   RUN_TEST(triefort_close__runs_without_segfaulting);

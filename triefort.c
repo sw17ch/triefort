@@ -25,12 +25,15 @@
 
 static S store_cfg(const CFG * const cfg, const char * const path);
 static S load_cfg(CFG * const cfg, const char * const path);
+static bool validate_cfg(const CFG * const cfg);
 static bool dir_exists(const char * const path);
 static bool file_exists(const char * const path);
 static int recursive_remove(const char * const path);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
-  assert(cfg->hash_len >= cfg->depth);
+  if (0 == validate_cfg(cfg)) {
+    return triefort_err_invalid_config;
+  }
 
   int mode = (S_IRUSR | S_IWUSR | S_IXUSR) |
              (S_IRGRP |           S_IXGRP) |
@@ -80,7 +83,11 @@ S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const
   }
   free((void *)oldcwd);
 
-  return triefort_ok;
+  if (!validate_cfg(&(*fort)->cfg)) {
+    return triefort_err_invalid_config;
+  } else {
+    return triefort_ok;
+  }
 }
 
 void triefort_close(TF * fort) {
@@ -125,6 +132,7 @@ static S store_cfg(const CFG * const cfg, const char * const path) {
     return triefort_err_config_could_not_be_created;
   } else {
     PANIC_IF(1 != fwrite(&cfg->depth, sizeof(cfg->depth), 1, cfghdl));
+    PANIC_IF(1 != fwrite(&cfg->width, sizeof(cfg->width), 1, cfghdl));
     PANIC_IF(1 != fwrite(&cfg->hash_len, sizeof(cfg->hash_len), 1, cfghdl));
 
     size_t nlen = strnlen(cfg->hash_name, sizeof(cfg->hash_name) - 1);
@@ -145,6 +153,7 @@ static S load_cfg(CFG * const cfg, const char * const path) {
     return triefort_err_config_could_not_be_opened;
   } else {
     PANIC_IF(1 != fread(&cfg->depth, sizeof(cfg->depth), 1, cfghdl));
+    PANIC_IF(1 != fread(&cfg->width, sizeof(cfg->width), 1, cfghdl));
     PANIC_IF(1 != fread(&cfg->hash_len, sizeof(cfg->hash_len), 1, cfghdl));
     uint8_t nlenb = 0;
     PANIC_IF(1 != fread(&nlenb, sizeof(nlenb), 1, cfghdl));
@@ -153,6 +162,16 @@ static S load_cfg(CFG * const cfg, const char * const path) {
   }
 
   return triefort_ok;
+}
+
+static bool validate_cfg(const CFG * const cfg) {
+  assert(cfg);
+
+  bool valid = ((cfg->depth > 0) &
+                (cfg->width > 0) &
+                (cfg->hash_len >= (cfg->depth * cfg->width)));
+
+  return valid;
 }
 
 static bool dir_exists(const char * const path) {
