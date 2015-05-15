@@ -12,7 +12,7 @@ OBJS=triefort.o
 test_${PROJECT}: test_triefort.c ${OBJS}
 
 
-triefort.o: triefort.h
+triefort.o: triefort.h triefort_internal_types.h
 
 test_${PROJECT}: triefort.o
 

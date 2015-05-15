@@ -1,7 +1,7 @@
 #include "greatest.h"
 #include "triefort.h"
+#include "triefort_internal_types.h"
 
-#include <assert.h>
 #include <errno.h>
 #include <fts.h>
 #include <stdbool.h>
@@ -11,6 +11,9 @@
 #include <unistd.h>
 
 #define TEST_TRIEFORT_PATH "__triefort_test_dir"
+#define TEST_TRIE_DEPTH 4
+#define TEST_HASH_LEN 20
+#define TEST_HASH_NAME "testhash"
 
 static int recursive_remove(const char * const path);
 static bool dir_exists(const char * const path);
@@ -24,13 +27,13 @@ static int create_test_triefort(void);
 static void destroy_triefort(void);
 
 const struct triefort_cfg testcfg = {
-    .depth = 4,
-    .hash_len = 20,
-    .hash_name = "testhash",
+    .depth = TEST_TRIE_DEPTH,
+    .hash_len = TEST_HASH_LEN,
+    .hash_name = TEST_HASH_NAME,
 };
 
 const struct triefort_hash_cfg hashcfg = {
-  .fn_name = "testhash",
+  .fn_name = TEST_HASH_NAME,
   .hasher = test_hasher,
 };
 
@@ -56,10 +59,25 @@ TEST triefort_open__is_okay_when_triefort_exists(void) {
   PASS();
 }
 
+TEST triefort_open__populates_internal_config(void) {
+  CHECK_CALL(create_test_triefort());
+
+  struct triefort * fort = NULL;
+  enum triefort_status s = triefort_open(&fort, &hashcfg, TEST_TRIEFORT_PATH);
+  ASSERT_EQ_FMT(triefort_ok, s, "%d");
+
+  ASSERT_EQ_FMT(fort->cfg.depth, TEST_TRIE_DEPTH, "%u");
+  ASSERT_EQ_FMT(fort->cfg.hash_len, TEST_HASH_LEN, "%u");
+  ASSERT_STR_EQ(TEST_HASH_NAME, fort->cfg.hash_name);
+
+  PASS();
+}
+
 SUITE(suite_triefort) {
   RUN_TEST(triefort_init__creates_triefort_at_path);
   RUN_TEST(triefort_init__creates_triefort_config_under_path);
   RUN_TEST(triefort_open__is_okay_when_triefort_exists);
+  RUN_TEST(triefort_open__populates_internal_config);
 }
 
 GREATEST_MAIN_DEFS();
