@@ -7,24 +7,24 @@ trees of arbitrary hashes.
 
 ```
 /triefort
-  /config
-  /store
-    /ab
-      /4e
-        /ab4ec9a2
-          /data
-      /a9
-        /aba9aacf
-          /key
-          /data
-    /3c
-      /d1
-        /3cd1002a
-          /data
-    /4c
-      /02
-        /4c02c3c8
-          /data
+| /config
+| /store
+| | /ab
+| | | /4e
+| | | | /ab4ec9a2
+| | | | | /data
+| | | /a9
+| | | | /aba9aacf
+| | | | | /key
+| | | | | /data
+| | /3c
+| | | /d1
+| | | | /3cd1002a
+| | | | | /data
+| | /4c
+| | | /02
+| | | | /4c02c3c8
+| | | | | /data
 ```
 
 The `config` file encodes three parameters:
