@@ -83,11 +83,22 @@ S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const
   }
   free((void *)oldcwd);
 
+  S s = triefort_ok;
+
   if (!validate_cfg(&(*fort)->cfg)) {
-    return triefort_err_invalid_config;
-  } else {
-    return triefort_ok;
+    s = triefort_err_invalid_config;
   }
+
+  if (0 != strcmp(hashcfg->fn_name, (*fort)->cfg.hash_name)) {
+    s = triefort_err_hash_name_mismatch;
+  }
+
+  if (triefort_ok != s) {
+    free(*fort);
+    *fort = NULL;
+  }
+
+  return s;
 }
 
 void triefort_close(TF * fort) {

@@ -108,6 +108,22 @@ TEST triefort_open__populates_internal_config(void) {
   PASS();
 }
 
+TEST triefort_open__checks_hash_names(void) {
+  const struct triefort_hash_cfg hashcfg = {
+    .fn_name = "BAD_" TEST_HASH_NAME,
+    .hasher = test_hasher,
+  };
+
+  CHECK_CALL(create_test_triefort());
+
+  struct triefort * fort = NULL;
+  enum triefort_status s = triefort_open(&fort, &hashcfg, TEST_TRIEFORT_PATH);
+  ASSERT_EQ_FMT(triefort_err_hash_name_mismatch, s, "%d");
+  ASSERT(NULL == fort);
+
+  PASS();
+}
+
 TEST triefort_close__runs_without_segfaulting(void) {
   CHECK_CALL(create_test_triefort());
 
@@ -148,6 +164,7 @@ SUITE(suite_triefort) {
   RUN_TEST(triefort_init__validates_the_config);
   RUN_TEST(triefort_open__is_okay_when_triefort_exists);
   RUN_TEST(triefort_open__populates_internal_config);
+  RUN_TEST(triefort_open__checks_hash_names);
   RUN_TEST(triefort_close__runs_without_segfaulting);
   RUN_TEST(triefort_destroy__removes_the_triefort);
   RUN_TEST(triefort_destroy__tries_to_make_sure_the_dir_is_a_triefort);
