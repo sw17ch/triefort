@@ -18,7 +18,8 @@ enum triefort_status {
   triefort_err_path_already_exists,
   triefort_err_path_could_not_be_created,
   triefort_err_config_could_not_be_created,
-  triefort_err_no_fort_at_path,
+  triefort_err_config_could_not_be_opened,
+  triefort_err_not_a_triefort,
 };
 
 /**
@@ -91,8 +92,10 @@ struct triefort_iter;
  * triefort can then be opened with `triefort_open`.
  *
  * Returns
- *    - triefort_ok - the triefort was created successfully
- *    - triefort_err_path_already_exists - the specified path already exists
+ *    - triefort_ok - the triefort was created successfully.
+ *    - triefort_err_path_already_exists - the specified path already exists.
+ *    - triefort_err_path_could_not_be_created - the path does not exist, but
+ *      also could not be created.
  */
 enum triefort_status triefort_init(
     const char * const path,
@@ -132,7 +135,7 @@ enum triefort_status triefort_close(
  *
  * Returns
  *    - triefort_ok - the triefort at `path` was destroyed.
- *    - triefort_err_no_fort_at_path - `path` does not reference a triefort.
+ *    - triefort_err_not_a_triefort - `path` does not reference a triefort.
  */
 enum triefort_status triefort_destroy(
     const char * const path);
