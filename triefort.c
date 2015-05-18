@@ -144,11 +144,11 @@ S triefort_destroy(char * const path) {
   return s;
 }
 
-S triefort_config_get(TF * const fort, CFG * const cfg) {
+S triefort_config_get(TF * const fort, const CFG ** cfg) {
   NULLCHK(fort);
   NULLCHK(cfg);
 
-  memcpy(cfg, &fort->cfg, sizeof(*cfg));
+  *cfg = &fort->cfg;
 
   return triefort_ok;
 }

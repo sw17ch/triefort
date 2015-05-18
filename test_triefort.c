@@ -162,7 +162,7 @@ TEST triefort_config_get__retrieves_the_triefort_config(void) {
   CHECK_CALL(create_test_triefort());
 
   enum triefort_status s;
-  struct triefort_cfg cfg = { 0, 0, 0, { 0 } };
+  const struct triefort_cfg * cfg = NULL;
   struct triefort * fort = NULL;
 
   s = triefort_open(&fort, &hashcfg, TEST_TRIEFORT_PATH);
@@ -171,10 +171,10 @@ TEST triefort_config_get__retrieves_the_triefort_config(void) {
   s = triefort_config_get(fort, &cfg);
   ASSERT_EQ_FMT(triefort_ok, s, "%d");
 
-  ASSERT_EQ_FMT(TEST_TRIE_DEPTH, cfg.depth, "%d");
-  ASSERT_EQ_FMT(TEST_TRIE_WIDTH, cfg.width, "%d");
-  ASSERT_EQ_FMT(TEST_HASH_LEN, cfg.hash_len, "%d");
-  ASSERT_STR_EQ(TEST_HASH_NAME, cfg.hash_name);
+  ASSERT_EQ_FMT(TEST_TRIE_DEPTH, cfg->depth, "%d");
+  ASSERT_EQ_FMT(TEST_TRIE_WIDTH, cfg->width, "%d");
+  ASSERT_EQ_FMT(TEST_HASH_LEN, cfg->hash_len, "%d");
+  ASSERT_STR_EQ(TEST_HASH_NAME, cfg->hash_name);
 
   PASS();
 }

@@ -155,7 +155,31 @@ enum triefort_status triefort_destroy(
  */
 enum triefort_status triefort_config_get(
     struct triefort * const fort,
-    struct triefort_cfg * const cfg);
+    const struct triefort_cfg ** cfg);
+
+/**
+ * triefort_put
+ *
+ * Write the content in `buffer` to the triefort. The hash of `key` will be the
+ * identifier for this content in the triefort.
+ *
+ * If `key` is `NULL`, the hash of `buffer` will be used as the triefort
+ * identifier instead.
+ *
+ * Returns
+ *    - triefort_ok - `buffer` has been written to the triefort and `hash`
+ *      contains the hash of `key`.
+ *    - triefort_err_duplicate_hash - the hash of the content is already
+ *      present in the trie.
+ */
+enum triefort_status triefort_put(
+    struct triefort * fort,
+    void * key,
+    size_t keylen,
+    void * buffer,
+    size_t bufferlen,
+    void * hash,
+    size_t hashlen);
 
 /**
  * triefort_info
@@ -220,30 +244,6 @@ enum triefort_status triefort_get(
     void * buffer,
     size_t bufferlen,
     size_t * readlen);
-
-/**
- * triefort_put
- *
- * Write the content in `buffer` to the triefort. The hash of `key` will be the
- * identifier for this content in the triefort.
- *
- * If `key` is `NULL`, the hash of `buffer` will be used as the triefort
- * identifier instead.
- *
- * Returns
- *    - triefort_ok - `buffer` has been written to the triefort and `hash`
- *      contains the hash of `key`.
- *    - triefort_err_duplicate_hash - the hash of the content is already
- *      present in the trie.
- */
-enum triefort_status triefort_put(
-    struct triefort * fort,
-    void * key,
-    size_t keylen,
-    void * buffer,
-    size_t bufferlen,
-    void * hash,
-    size_t hashlen);
 
 /**
  * triefort_iter_create
