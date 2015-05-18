@@ -13,8 +13,9 @@ test_${PROJECT}: test_triefort.c ${OBJS}
 
 
 triefort.o: triefort.h triefort_internal_types.h
+test_utils.o: triefort.h triefort_internal_types.h test_utils.h
 
-test_${PROJECT}: triefort.o
+test_${PROJECT}: triefort.o test_utils.o
 
 clean:
 	rm -f test_${PROJECT} *.o
