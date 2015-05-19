@@ -42,7 +42,7 @@ static bool dir_exists(const char * const path);
 static bool file_exists(const char * const path);
 static int recursive_remove(const char * const path);
 static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char ** path);
-static char * mk_hash_str(const TF * const fort, void * hash, size_t hashlen);
+static char * mk_hash_str(void * hash, size_t hashlen);
 static S write_file(const char * const filename, const void * const data, const size_t datalen);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
@@ -355,7 +355,7 @@ static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char *
   }
   free(dir_str);
 
-  char * hash_str = mk_hash_str(fort, hash, hashlen);
+  char * hash_str = mk_hash_str(hash, hashlen);
   PANIC_IF(0 != mkdir(hash_str, DIRMODE));
   PANIC_IF(0 != chdir(hash_str));
   free(hash_str);
@@ -370,8 +370,8 @@ static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char *
   return triefort_ok;
 }
 
-static char * mk_hash_str(const TF * const fort, void * hash, size_t hashlen) {
-  char * hs = calloc(1, (fort->cfg.hash_len * 2));
+static char * mk_hash_str(void * hash, size_t hashlen) {
+  char * hs = calloc(1, (hashlen * 2) + 1);
   uint8_t * hashb = hash;
 
   for (size_t i = 0; i < hashlen; i++) {

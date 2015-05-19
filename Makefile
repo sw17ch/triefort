@@ -3,7 +3,7 @@ OPTIMIZE= -O3
 WARN=     -Wall -Wextra -pedantic
 INCLUDES= -Ivendor/greatest
 
-CFLAGS=   -std=gnu99 ${WARN} ${OPTIMIZE} ${INCLUDES}
+CFLAGS=   -g -std=gnu99 ${WARN} ${OPTIMIZE} ${INCLUDES}
 
 all: test_${PROJECT}
 
