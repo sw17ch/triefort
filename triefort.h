@@ -162,11 +162,27 @@ enum triefort_status triefort_config_get(
 /**
  * triefort_put
  *
+ * Write the content in `buffer` to the triefort. The hash of `buffer` will be
+ * the identifier for this content in the triefort.
+ *
+ * Returns
+ *    - triefort_ok - `buffer` has been written to the triefort and `hash`
+ *      contains the hash of `buffer`.
+ *    - triefort_err_duplicate_hash - the hash of the content is already
+ *      present in the trie.
+ */
+enum triefort_status triefort_put(
+    struct triefort * fort,
+    void * const buffer,
+    const size_t bufferlen,
+    void * const hash,
+    const size_t hashlen);
+
+/**
+ * triefort_put_with_key
+ *
  * Write the content in `buffer` to the triefort. The hash of `key` will be the
  * identifier for this content in the triefort.
- *
- * If `key` is `NULL`, the hash of `buffer` will be used as the triefort
- * identifier instead.
  *
  * Returns
  *    - triefort_ok - `buffer` has been written to the triefort and `hash`
@@ -174,7 +190,7 @@ enum triefort_status triefort_config_get(
  *    - triefort_err_duplicate_hash - the hash of the content is already
  *      present in the trie.
  */
-enum triefort_status triefort_put(
+enum triefort_status triefort_put_with_key(
     struct triefort * fort,
     void * const key,
     const size_t keylen,

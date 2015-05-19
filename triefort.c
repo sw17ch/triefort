@@ -41,8 +41,8 @@ static bool validate_cfg(const CFG * const cfg);
 static bool dir_exists(const char * const path);
 static bool file_exists(const char * const path);
 static int recursive_remove(const char * const path);
-static char * mk_hash_path_data(const TF * const fort, void * hash, size_t hashlen);
-static char * mk_hash_path_key(const TF * const fort, void * hash, size_t hashlen);
+static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char ** path);
+static char * mk_hash_str(const TF * const fort, void * hash, size_t hashlen);
 static S write_file(const char * const filename, const void * const data, const size_t datalen);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
@@ -160,7 +160,6 @@ S triefort_config_get(TF * const fort, const CFG ** cfg) {
 }
 
 S triefort_put(TF * fort,
-    void * const key, const size_t keylen,
     void * const buffer, const size_t bufferlen,
     void * const hash, const size_t hashlen) {
   NULLCHK(fort);
@@ -168,57 +167,53 @@ S triefort_put(TF * fort,
   NULLCHK(hash);
 
   triefort_hasher_fn * hfn = fort->hcfg->hasher;
-  void * hashbuffer = NULL;
-  size_t hashbuffer_len = 0;
 
-  if (NULL != key) {
-    hashbuffer = key;
-    hashbuffer_len = keylen;
-  } else {
-    hashbuffer = buffer;
-    hashbuffer_len = bufferlen;
-  }
-
-  if (0 != hfn(hash, hashlen, hashbuffer, hashbuffer_len)) {
+  if (0 != hfn(hash, hashlen, buffer, bufferlen)) {
     return triefort_err_hasher_error;
   }
 
-  const char * old_dir = getcwd(NULL, 0);
-  PANIC_IF(0 != chdir(fort->path));
-
-  size_t dir_str_len = (fort->cfg.width * 2) + 1;
-  char * dir_str = calloc(1, dir_str_len);
-  uint8_t * hashb = hash;
-  for (size_t i = 0; i < fort->cfg.depth; i++) {
-    for (size_t j = 0; j < fort->cfg.width; j++) {
-      char * strpos = &dir_str[j * 2];
-      size_t hashix = (i * fort->cfg.width) + j;
-      snprintf(strpos, 3, "%02x", hashb[hashix]);
-    }
-    if (dir_exists(dir_str)) {
-      continue;
-    } else {
-      PANIC_IF(0 != mkdir(dir_str, DIRMODE));
-    }
-    PANIC_IF(0 != chdir(dir_str));
+  char * data_path = NULL;
+  PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &data_path));
+  char * old_dir = getcwd(NULL,0);
+  PANIC_IF(0 != chdir(data_path));
+  {
+    CHECK_CALL(write_file("triefort.data", buffer, bufferlen));
   }
-  free(dir_str);
-
-  S s = triefort_ok;
-  char * hash_path_data = mk_hash_path_data(fort, hash, hashlen);
-  if (triefort_ok == (s = write_file(hash_path_data, buffer, bufferlen))) {
-    if (NULL != key) {
-      char * hash_path_key = mk_hash_path_key(fort, hash, hashlen);
-      s = write_file(hash_path_key, buffer, bufferlen);
-      free(hash_path_key);
-    }
-  }
-  free(hash_path_data);
-
   PANIC_IF(0 != chdir(old_dir));
-  free((void *)old_dir);
+  free(old_dir);
+  free(data_path);
 
-  return s;
+  return triefort_ok;
+}
+
+S triefort_put_with_key(TF * fort,
+    void * const key, const size_t keylen,
+    void * const buffer, const size_t bufferlen,
+    void * const hash, const size_t hashlen) {
+  NULLCHK(fort);
+  NULLCHK(key);
+  NULLCHK(buffer);
+  NULLCHK(hash);
+
+  triefort_hasher_fn * hfn = fort->hcfg->hasher;
+
+  if (0 != hfn(hash, hashlen, key, keylen)) {
+    return triefort_err_hasher_error;
+  }
+
+  char * data_path = NULL;
+  PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &data_path));
+  char * old_dir = getcwd(NULL,0);
+  PANIC_IF(0 != chdir(data_path));
+  {
+    CHECK_CALL(write_file("triefort.key", key, keylen));
+    CHECK_CALL(write_file("triefort.data", buffer, bufferlen));
+  }
+  PANIC_IF(0 != chdir(old_dir));
+  free(old_dir);
+  free(data_path);
+
+  return triefort_ok;
 }
 
 static S store_cfg(const CFG * const cfg, const char * const path) {
@@ -338,28 +333,51 @@ static int recursive_remove(const char * const path) {
   return e;
 }
 
-static char * mk_hash_path_data(const TF * const fort, void * hash, size_t hashlen) {
-  char * hs = calloc(1, (fort->cfg.hash_len * 2) + strlen(".data") + 1);
+static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char ** path) {
+  const char * old_dir = getcwd(NULL, 0);
+  PANIC_IF(0 != chdir(fort->path));
+
+  size_t dir_str_len = (fort->cfg.width * 2) + 1;
+  char * dir_str = calloc(1, dir_str_len);
   uint8_t * hashb = hash;
-
-  for (size_t i = 0; i < hashlen; i++) {
-    char * h = &hs[i * 2];
-    snprintf(h, 3, "%02x", hashb[i]);
+  for (size_t i = 0; i < fort->cfg.depth; i++) {
+    for (size_t j = 0; j < fort->cfg.width; j++) {
+      char * strpos = &dir_str[j * 2];
+      size_t hashix = (i * fort->cfg.width) + j;
+      snprintf(strpos, 3, "%02x", hashb[hashix]);
+    }
+    if (dir_exists(dir_str)) {
+      continue;
+    } else {
+      PANIC_IF(0 != mkdir(dir_str, DIRMODE));
+    }
+    PANIC_IF(0 != chdir(dir_str));
   }
-  snprintf(&hs[hashlen * 2], 6, "%s", ".data");
+  free(dir_str);
 
-  return hs;
+  char * hash_str = mk_hash_str(fort, hash, hashlen);
+  PANIC_IF(0 != mkdir(hash_str, DIRMODE));
+  PANIC_IF(0 != chdir(hash_str));
+  free(hash_str);
+
+  if (path) {
+    *path = getcwd(NULL,0);
+  }
+
+  PANIC_IF(0 != chdir(old_dir));
+  free((void *)old_dir);
+
+  return triefort_ok;
 }
 
-static char * mk_hash_path_key(const TF * const fort, void * hash, size_t hashlen) {
-  char * hs = calloc(1, (fort->cfg.hash_len * 2) + strlen(".key") + 1);
+static char * mk_hash_str(const TF * const fort, void * hash, size_t hashlen) {
+  char * hs = calloc(1, (fort->cfg.hash_len * 2));
   uint8_t * hashb = hash;
 
   for (size_t i = 0; i < hashlen; i++) {
     char * h = &hs[i * 2];
     snprintf(h, 3, "%02x", hashb[i]);
   }
-  snprintf(&hs[hashlen * 2], 5, "%s", ".key");
 
   return hs;
 }
