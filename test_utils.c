@@ -119,6 +119,32 @@ int open_test_triefort(struct triefort ** fort) {
   PASS();
 }
 
+int open_test_triefort_with_data(
+    struct triefort ** fort,
+    char * key,
+    char * buffer,
+    void * hash) {
+  CHECK_CALL(open_test_triefort(fort));
+  enum triefort_status s;
+
+  if (NULL != key) {
+    s = triefort_put_with_key(
+        *fort,
+        key, strlen(key),
+        buffer, strlen(buffer),
+        hash);
+  } else {
+    s = triefort_put(
+        *fort,
+        buffer, strlen(buffer),
+        hash);
+  }
+
+  ASSERT_EQ_FMT(triefort_ok, s, "%d");
+
+  PASS();
+}
+
 bool buffer_all_null(void * buffer, size_t len) {
   uint8_t * bufferb = buffer;
 

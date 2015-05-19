@@ -144,71 +144,47 @@ TEST triefort_config_get__retrieves_the_triefort_config(void) {
 }
 
 TEST triefort_put_with_key__uses_key_for_hash(void) {
-  enum triefort_status s;
   struct triefort * fort = NULL;
 
-  CHECK_CALL(open_test_triefort(&fort));
-
-  char key[] = "test key";
-  char buffer[] = "test buffer";
+  char * key = "test key!";
+  char * buffer = "test buffer!";
   uint8_t hash_actual[20] = { 0 };
   uint8_t hash_expected[20] = { 0 };
 
-  s = triefort_put_with_key(
-      fort,
-      key, sizeof(key),
-      buffer, sizeof(buffer),
-      hash_actual);
-  ASSERT(0 == test_hasher(hash_expected, sizeof(hash_expected),
-                          key, sizeof(key)));
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash_actual));
 
+  ASSERT(0 == test_hasher(hash_expected, sizeof(hash_expected), key, strlen(key)));
   ASSERT(0 == memcmp(hash_expected, hash_actual, sizeof(hash_actual)));
-  ASSERT_EQ(triefort_ok, s);
 
   triefort_close(fort);
   PASS();
 }
 
 TEST triefort_put__uses_buffer_for_hash(void) {
-  enum triefort_status s;
   struct triefort * fort = NULL;
 
-  CHECK_CALL(open_test_triefort(&fort));
-
-  char buffer[] = "test buffer";
+  char * buffer = "test buffer!";
   uint8_t hash_expected[20] = { 0 };
   uint8_t hash_actual[20] = { 0 };
 
-  s = triefort_put(
-      fort,
-      buffer, sizeof(buffer),
-      hash_actual);
-  ASSERT(0 == test_hasher(hash_expected, sizeof(hash_expected),
-                          buffer, sizeof(buffer)));
+  CHECK_CALL(open_test_triefort_with_data(&fort, NULL, buffer, hash_actual));
 
+  ASSERT(0 == test_hasher(hash_expected, sizeof(hash_expected), buffer, strlen(buffer)));
   ASSERT(0 == memcmp(hash_expected, hash_actual, sizeof(hash_actual)));
-  ASSERT_EQ(triefort_ok, s);
 
   triefort_close(fort);
   PASS();
 }
 
 TEST triefort_put__writes_buffer_data(void) {
-  enum triefort_status s;
   struct triefort * fort = NULL;
 
-  CHECK_CALL(open_test_triefort(&fort));
-
-  char buffer[] = "test buffer";
+  char * buffer = "test buffer!";
   uint8_t hash[20] = { 0 };
 
-  s = triefort_put(
-      fort,
-      buffer, sizeof(buffer),
-      hash);
+  CHECK_CALL(open_test_triefort_with_data(&fort, NULL, buffer, hash));
 
   ASSERT_FALSE(buffer_all_null(hash, sizeof(hash)));
-  ASSERT_EQ(triefort_ok, s);
 
   char hash_str[(TEST_HASH_LEN * 2) + 1] = {0};
   char path_buf[512];
@@ -231,23 +207,15 @@ TEST triefort_put__writes_buffer_data(void) {
 }
 
 TEST triefort_put_with_key__writes_key_data(void) {
-  enum triefort_status s;
   struct triefort * fort = NULL;
 
-  CHECK_CALL(open_test_triefort(&fort));
-
-  char key[] = "test key";
-  char buffer[] = "test buffer";
+  char * key = "test key!";
+  char * buffer = "test buffer!";
   uint8_t hash[20] = { 0 };
 
-  s = triefort_put_with_key(
-      fort,
-      key, sizeof(key),
-      buffer, sizeof(buffer),
-      hash);
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
 
   ASSERT_FALSE(buffer_all_null(hash, sizeof(hash)));
-  ASSERT_EQ(triefort_ok, s);
 
   char hash_str[(TEST_HASH_LEN * 2) + 1] = {0};
   char path_buf[512];
@@ -270,30 +238,22 @@ TEST triefort_put_with_key__writes_key_data(void) {
 }
 
 TEST triefort_info__gets_info_about_the_hash(void) {
-  enum triefort_status s;
   struct triefort * fort = NULL;
 
-  CHECK_CALL(open_test_triefort(&fort));
-
-  char key[] = "test key";
-  char buffer[] = "test buffer";
+  char * key = "test key!";
+  char * buffer = "test buffer!";
   uint8_t hash[20] = { 0 };
 
-  s = triefort_put_with_key(
-      fort,
-      key, sizeof(key),
-      buffer, sizeof(buffer),
-      hash);
-  ASSERT_EQ(triefort_ok, s);
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
 
   struct triefort_info * info = NULL;
-  s = triefort_info(fort, hash, &info);
+  enum triefort_status s = triefort_info(fort, hash, &info);
   ASSERT_EQ(triefort_ok, s);
   ASSERT(info != NULL);
 
-  ASSERT_EQ_FMT(sizeof(buffer), info->length, "%lu");
+  ASSERT_EQ_FMT(strlen(buffer), info->length, "%lu");
   ASSERT_STR_EQ(key, info->key);
-  ASSERT_EQ_FMT(sizeof(key), info->keylen, "%lu");
+  ASSERT_EQ_FMT(strlen(key), info->keylen, "%lu");
 
   triefort_info_free(info);
 
@@ -302,16 +262,16 @@ TEST triefort_info__gets_info_about_the_hash(void) {
 }
 
 TEST triefort_info_with_key__gets_info_about_the_key(void) {
-  enum triefort_status s;
   struct triefort * fort = NULL;
 
-  CHECK_CALL(open_test_triefort(&fort));
-
-  char key[] = "test key";
-  char buffer[] = "test buffer";
+  char * key = "test key!";
+  char * buffer = "test buffer!";
   uint8_t hash[20] = { 0 };
 
-  s = triefort_put_with_key(
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
+
+  enum triefort_status s =
+    triefort_put_with_key(
       fort,
       key, sizeof(key),
       buffer, sizeof(buffer),
@@ -319,13 +279,13 @@ TEST triefort_info_with_key__gets_info_about_the_key(void) {
   ASSERT_EQ(triefort_ok, s);
 
   struct triefort_info * info = NULL;
-  s = triefort_info_with_key(fort, key, sizeof(key), &info);
+  s = triefort_info_with_key(fort, key, strlen(key), &info);
   ASSERT_EQ(triefort_ok, s);
   ASSERT(info != NULL);
 
-  ASSERT_EQ_FMT(sizeof(buffer), info->length, "%lu");
+  ASSERT_EQ_FMT(strlen(buffer), info->length, "%lu");
   ASSERT_STR_EQ(key, info->key);
-  ASSERT_EQ_FMT(sizeof(key), info->keylen, "%lu");
+  ASSERT_EQ_FMT(strlen(key), info->keylen, "%lu");
 
   triefort_info_free(info);
 
@@ -337,18 +297,11 @@ TEST triefort_get_stream__opens_a_file_handle(void) {
   enum triefort_status s;
   struct triefort * fort = NULL;
 
-  CHECK_CALL(open_test_triefort(&fort));
-
-  char key[] = "test key";
-  char buffer[] = "test buffer";
+  char * key = "test key!";
+  char buffer[] = "test buffer!";
   uint8_t hash[20] = { 0 };
 
-  s = triefort_put_with_key(
-      fort,
-      key, sizeof(key),
-      buffer, sizeof(buffer),
-      hash);
-  ASSERT_EQ(triefort_ok, s);
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
 
   // make sure we get a stream
   FILE * stream = NULL;
@@ -358,8 +311,44 @@ TEST triefort_get_stream__opens_a_file_handle(void) {
   ASSERT_EQ(triefort_ok, s);
 
   // check that the stream has the right data
+  char rbuffer[sizeof(buffer)] = {0};
+  fread(rbuffer, strlen(buffer), 1, stream);
+  ASSERT_STR_EQ(buffer, rbuffer);
+
+  s = triefort_stream_close(fort, stream);
+  ASSERT_EQ(triefort_ok, s);
+
+  triefort_close(fort);
+  PASS();
+}
+
+TEST triefort_get_stream_with_key__opens_a_file_handle(void) {
+  enum triefort_status s;
+  struct triefort * fort = NULL;
+
+  char * key = "test key!";
+  char buffer[] = "test buffer!";
+  uint8_t hash[20] = { 0 };
+
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
+
+  s = triefort_put_with_key(
+      fort,
+      key, strlen(key),
+      buffer, strlen(buffer),
+      hash);
+  ASSERT_EQ(triefort_ok, s);
+
+  // make sure we get a stream
+  FILE * stream = NULL;
+  s = triefort_get_stream_with_key(
+      fort, key, strlen(key), &stream);
+  ASSERT(stream != NULL);
+  ASSERT_EQ(triefort_ok, s);
+
+  // check that the stream has the right data
   char rbuffer[sizeof(buffer)];
-  fread(rbuffer, sizeof(rbuffer), 1, stream);
+  fread(rbuffer, strlen(rbuffer), 1, stream);
   ASSERT_STR_EQ(buffer, rbuffer);
 
   s = triefort_stream_close(fort, stream);
@@ -387,6 +376,7 @@ SUITE(suite_triefort) {
   RUN_TEST(triefort_info__gets_info_about_the_hash);
   RUN_TEST(triefort_info_with_key__gets_info_about_the_key);
   RUN_TEST(triefort_get_stream__opens_a_file_handle);
+  RUN_TEST(triefort_get_stream_with_key__opens_a_file_handle);
 }
 
 GREATEST_MAIN_DEFS();
