@@ -409,6 +409,55 @@ TEST triefort_get_with_key__reads_out_the_stored_data(void) {
   PASS();
 }
 
+TEST triefort_iter_create__makes_a_new_iterator(void) {
+  char * key = "iter test!";
+  char buffer[] = "some buffer for testing iterators.";
+  uint8_t hash[20] = { 0 };
+
+  struct triefort * fort = NULL;
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
+
+  struct triefort_iter * iter = NULL;
+  enum triefort_status s = triefort_iter_create(fort, &iter);
+  ASSERT_EQ(triefort_ok, s);
+  ASSERT(NULL != iter);
+  ASSERT_EQ(fort, iter->fort);
+  triefort_iter_free(iter);
+
+  PASS();
+}
+
+TEST triefort_iter_create__points_to_the_first_entry(void) {
+  char * key = "iter test!";
+  char buffer[] = "some buffer for testing iterators.";
+  uint8_t hash[20] = { 0 };
+  uint8_t iter_hash[20] = { 0 };
+
+  struct triefort * fort = NULL;
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
+
+  struct triefort_iter * iter = NULL;
+  enum triefort_status s;
+
+  s = triefort_iter_create(fort, &iter);
+  ASSERT_EQ(triefort_ok, s);
+
+  s = triefort_iter_hash(iter, iter_hash);
+  ASSERT_EQ(triefort_ok, s);
+  ASSERT(0 == memcmp(hash, iter_hash, sizeof(hash)));
+
+  size_t iter_buffer_len = 0;
+  char iter_buffer[sizeof(buffer)] = { 0 };
+
+  s = triefort_iter_data(iter, iter_buffer, sizeof(iter_buffer), &iter_buffer_len);
+  ASSERT_EQ(triefort_ok, s);
+  ASSERT_STR_EQ(buffer, iter_buffer);
+
+  triefort_iter_free(iter);
+
+  PASS();
+}
+
 SUITE(suite_triefort) {
   RUN_TEST(triefort_init__creates_triefort_at_path);
   RUN_TEST(triefort_init__creates_triefort_config_under_path);
@@ -430,6 +479,8 @@ SUITE(suite_triefort) {
   RUN_TEST(triefort_get_stream_with_key__opens_a_file_handle);
   RUN_TEST(triefort_get__reads_out_the_stored_data);
   RUN_TEST(triefort_get_with_key__reads_out_the_stored_data);
+  RUN_TEST(triefort_iter_create__makes_a_new_iterator);
+  RUN_TEST(triefort_iter_create__points_to_the_first_entry);
 }
 
 GREATEST_MAIN_DEFS();

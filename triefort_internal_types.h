@@ -3,6 +3,9 @@
 
 #include "triefort.h"
 
+#include <fts.h>
+#include <stdbool.h>
+
 struct triefort {
   /* Path from the root to the triefort. */
   const char * path;
@@ -14,6 +17,13 @@ struct triefort {
   struct triefort_cfg cfg;
 };
 
-struct triefort_iter;
+struct triefort_iter {
+  const struct triefort * fort;
+  void * hash;
+  bool done;
+
+  FTS * fts;
+  FTSENT * ent;
+};
 
 #endif /* TRIEFORT_INTERNAL_TYPES_H */

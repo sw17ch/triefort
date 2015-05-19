@@ -27,6 +27,7 @@ enum triefort_status {
   triefort_err_hasher_error,
   triefort_err_write_error,
   triefort_err_hash_does_not_exist,
+  triefort_err_iterator_done,
 };
 
 /**
@@ -356,8 +357,8 @@ enum triefort_status triefort_get_with_key(
  *    - triefort_ok - `*iter` points to a new iterator.
  */
 enum triefort_status triefort_iter_create(
-    struct triefort * fort,
-    struct triefort_iter ** iter);
+    struct triefort * const fort,
+    struct triefort_iter ** const iter);
 
 /**
  * triefort_iter_free
@@ -368,15 +369,36 @@ void triefort_iter_free(
     struct triefort_iter * iter);
 
 /**
- * triefort_iter_reset
+ * triefort_iter_hash
  *
- * Reset the iterator to the beginning.
+ * Copies the current hash into the provided buffer.
+ *
+ * `hash` must have at least as many bytes as specified by the triefort
+ * configuration.
  *
  * Returns
- *    - triefort_ok - the iterator was reset.
+ *    - triefort_ok - `hash` has been populated.
+ *    - triefort_err_iterator_done - the iterator doesn't have any more elements.
  */
-enum triefort_status triefort_iter_reset(
-    struct triefort_iter * iter);
+enum triefort_status triefort_iter_hash(
+    struct triefort_iter * const iter,
+    void * const hash);
+
+/**
+ * triefort_iter_data
+ *
+ * Copies the data of the node pointed to by the iterator into the provided
+ * buffer.
+ *
+ * Returns
+ *    - triefort_ok - `buffer` has been populated.
+ *    - triefort_err_iterator_done - the iterator doesn't have any more elements.
+ */
+enum triefort_status triefort_iter_data(
+    struct triefort_iter * const iter,
+    void * buffer,
+    size_t bufferlen,
+    size_t * readlen);
 
 /**
  * triefort_iter_next
@@ -388,6 +410,17 @@ enum triefort_status triefort_iter_reset(
  *    - triefort_err_iterator_done - there are no more elements to iterate.
  * */
 enum triefort_status triefort_iter_next(
+    struct triefort_iter * const iter);
+
+/**
+ * triefort_iter_reset
+ *
+ * Reset the iterator to the beginning.
+ *
+ * Returns
+ *    - triefort_ok - the iterator was reset.
+ */
+enum triefort_status triefort_iter_reset(
     struct triefort_iter * iter);
 
 /**

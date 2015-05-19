@@ -44,6 +44,7 @@ static bool file_exists(const char * const path);
 static int recursive_remove(const char * const path);
 static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char ** path);
 static char * mk_hash_str(const void * const hash, const size_t hashlen);
+static void mk_hash_from_hex_str(const char * const str, void * const hash, const size_t hashlen);
 static S write_file(const char * const filename, const void * const data, const size_t datalen);
 static char * trie_dir_path(const TF * const fort, const void * const hash, const char * filename);
 
@@ -360,6 +361,90 @@ S triefort_get_with_key(TF * const fort, void * key, size_t keylen, void * buffe
   return s;
 }
 
+S triefort_iter_create(TF * const fort, ITER ** const iter) {
+  NULLCHK(fort);
+  NULLCHK(iter);
+
+  const char * const ptrs[] = { fort->path, 0 };
+  const int fts_options = FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV;
+
+  *iter = calloc(1, sizeof(**iter));
+  ITER * it = *iter;
+
+  it->fort = fort;
+  it->hash = calloc(1, fort->cfg.hash_len);
+  it->done = false;
+  it->fts = fts_open((char * const *)ptrs, fts_options, NULL);
+  it->ent = NULL;
+
+  return triefort_iter_next(it);
+}
+
+S triefort_iter_next(ITER * const iter) {
+  FTSENT * ent;
+  int e = 0;
+
+  while((ent = fts_read(iter->fts))) {
+    switch(ent->fts_info) {
+    case FTS_NS: case FTS_DNR: case FTS_ERR:
+      fprintf(stderr, "%s: fts_read error: %s\n",
+          ent->fts_accpath, strerror(ent->fts_errno));
+      e = ent->fts_errno;
+      break;
+    case FTS_F:  case FTS_DC: case FTS_DOT:    case FTS_NSOK:
+    case FTS_DP: case FTS_SL: case FTS_SLNONE: case FTS_DEFAULT:
+      break;
+    case FTS_D:
+      if (ent->fts_level == iter->fort->cfg.depth + 1) {
+        iter->ent = ent;
+        return triefort_ok;
+      }
+      break;
+    }
+  }
+
+  iter->ent = NULL;
+  iter->done = true;
+
+  return triefort_err_iterator_done;
+}
+
+void triefort_iter_free(ITER * const iter) {
+  if (NULL != iter) {
+    fts_close(iter->fts);
+    free(iter->hash);
+    free(iter);
+  }
+}
+
+S triefort_iter_hash(ITER * const iter, void * const hash) {
+  if (iter->done) {
+    return triefort_err_iterator_done;
+  } else {
+    mk_hash_from_hex_str(iter->ent->fts_name, hash, iter->fort->cfg.hash_len);
+    return triefort_ok;
+  }
+}
+
+S triefort_iter_data(ITER * const iter, void * buffer, size_t bufferlen, size_t * readlen) {
+  if (iter->done) {
+    return triefort_err_iterator_done;
+  }
+
+  char * old_dir = getcwd(NULL,0);
+  {
+    PANIC_IF(0 != chdir(iter->ent->fts_path));
+
+    FILE * fh = fopen("triefort.data", "rb");
+    *readlen = fread(buffer, 1, bufferlen, fh);
+    fclose(fh);
+
+    PANIC_IF(0 != chdir(old_dir));
+  }
+  free(old_dir);
+  return triefort_ok;
+}
+
 static S store_cfg(const CFG * const cfg, const char * const path) {
   NULLCHK(cfg);
   NULLCHK(path);
@@ -576,6 +661,21 @@ static char * mk_hash_str(const void * const hash, const size_t hashlen) {
   }
 
   return hs;
+}
+
+static void mk_hash_from_hex_str(const char * const str, void * const hash, const size_t hashlen) {
+  size_t slen = strlen(str);
+  if (slen % 2 == 1) { return; }
+
+  uint8_t * hashb = hash;
+
+  for (size_t i = 0; i < hashlen; i++) {
+    size_t pos = i * 2;
+
+    if ((pos + 1) < slen) {
+      sscanf(&str[pos], "%02hhx", &hashb[i]);
+    }
+  }
 }
 
 static S write_file(const char * const filename, const void * const data, const size_t datalen) {
