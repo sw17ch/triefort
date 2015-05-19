@@ -85,8 +85,10 @@ int test_hasher(void * hash, const size_t hashlen,
   uint8_t sum = 0;
 
   for (size_t i = 0; i < bufferlen; i++) {
-    sum += bufferb[i];
-    hashb[i % hashlen] += sum;
+    for (size_t j = 0; j < hashlen; j++) {
+      hashb[j % hashlen] += sum;
+      sum += bufferb[i];
+    }
   }
 
   for (size_t i = 0; i < hashlen; i++) {
