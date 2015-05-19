@@ -7,6 +7,7 @@ const struct triefort_cfg testcfg = {
     .depth = TEST_TRIE_DEPTH,
     .width = TEST_TRIE_WIDTH,
     .hash_len = TEST_HASH_LEN,
+    .max_key_len = TEST_MAX_KEY_LEN,
     .hash_name = TEST_HASH_NAME,
 };
 

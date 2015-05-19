@@ -227,6 +227,7 @@ static S store_cfg(const CFG * const cfg, const char * const path) {
     PANIC_IF(1 != fwrite(&cfg->depth, sizeof(cfg->depth), 1, cfghdl));
     PANIC_IF(1 != fwrite(&cfg->width, sizeof(cfg->width), 1, cfghdl));
     PANIC_IF(1 != fwrite(&cfg->hash_len, sizeof(cfg->hash_len), 1, cfghdl));
+    PANIC_IF(1 != fwrite(&cfg->max_key_len, sizeof(cfg->max_key_len), 1, cfghdl));
 
     size_t nlen = strnlen(cfg->hash_name, sizeof(cfg->hash_name) - 1);
     uint8_t nlenb = nlen;
@@ -250,6 +251,7 @@ static S load_cfg(CFG * const cfg, const char * const path) {
     PANIC_IF(1 != fread(&cfg->depth, sizeof(cfg->depth), 1, cfghdl));
     PANIC_IF(1 != fread(&cfg->width, sizeof(cfg->width), 1, cfghdl));
     PANIC_IF(1 != fread(&cfg->hash_len, sizeof(cfg->hash_len), 1, cfghdl));
+    PANIC_IF(1 != fread(&cfg->max_key_len, sizeof(cfg->max_key_len), 1, cfghdl));
     uint8_t nlenb = 0;
     PANIC_IF(1 != fread(&nlenb, sizeof(nlenb), 1, cfghdl));
     PANIC_IF(nlenb != fread(&cfg->hash_name, 1, nlenb, cfghdl));

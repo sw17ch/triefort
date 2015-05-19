@@ -50,6 +50,9 @@ struct triefort_cfg {
   /* The number of bytes each hash contains. Must be >= (depth * width). */
   uint16_t hash_len;
 
+  /* The maximum length of a key. If 0, keys are not allowed. */
+  size_t max_key_len;
+
   /* The name of the hash implementation. */
   char hash_name[MAX_LEN_HASH_NAME];
 };
@@ -202,17 +205,39 @@ enum triefort_status triefort_put_with_key(
 /**
  * triefort_info
  *
- * Get information about the hash.
+ * Get information about the specified hash.
  *
  * Returns
- *    - triefort_ok - `info` has been populated with information about the data
- *      referenced by `hash`
- *    - triefort_err_does_not_exist - the hash does not exist in the triefort.
+ *    - triefort_ok - `info` has been populated
+ *    - triefort_err_does_not_exist - `hash` is not in the triefort
  */
 enum triefort_status triefort_info(
-    struct triefort * const fort,
+    const struct triefort * const fort,
     const void * const hash,
     const size_t hashlen,
+    struct triefort_info * const info);
+
+/**
+ * triefort_info_with_key
+ *
+ * Get information about the hash of the specified key.
+ *
+ * Returns
+ *    - triefort_ok - `info` has been populated
+ *    - triefort_err_does_not_exist - the hash of `key` is not in the triefort
+ */
+enum triefort_status triefort_info_with_key(
+    const struct triefort * const fort,
+    const void * const key,
+    const size_t keylen,
+    struct triefort_info * const info);
+
+/**
+ * triefort_info_free
+ *
+ * Free `triefort_info` structures.
+ */
+void triefort_info_free(
     struct triefort_info * const info);
 
 /**
@@ -229,6 +254,23 @@ enum triefort_status triefort_get_stream(
     struct triefort * const fort,
     const void * const hash,
     const size_t hashlen,
+    FILE ** const hdl);
+
+/**
+ * triefort_get_stream_with_key
+ *
+ * Open a read-only file stream to the hash of the key in the tirefort, if it
+ * exists. If the hash of the key does not exist in the triefort, an error is
+ * returned.
+ *
+ * Returns
+ *    - triefort_ok - `*hdl` points to a valid file stream referenced by `hash`
+ *    - triefort_err_does_not_exist - the hash of `key` does not reference a real path
+ */
+enum triefort_status triefort_get_stream_with_key(
+    struct triefort * const fort,
+    const void * const key,
+    const size_t keylen,
     FILE ** const hdl);
 
 /**
@@ -259,6 +301,27 @@ enum triefort_status triefort_get(
     struct triefort * const fort,
     void * hash,
     size_t hashlen,
+    void * buffer,
+    size_t bufferlen,
+    size_t * readlen);
+
+/**
+ * triefort_get_with_key
+ *
+ * Read the content identified by `hash` into `buffer`. At most `bufferlen`
+ * bytes will be copied. After copying the data into the buffer `readlen` will
+ * be the number of bytes copied into buffer.
+ *
+ * Returns
+ *    - triefort_ok - `buffer` contains all the data referenced by `hash`.
+ *    - triefort_err_would_overflow - `buffer` contains `bufferlen` bytes of
+ *      data. The hash references more data than would fit.
+ *    - triefort_err_does_not_exist - the hash does not exist in the triefort.
+ */
+enum triefort_status triefort_get_with_key(
+    struct triefort * const fort,
+    void * key,
+    size_t keylen,
     void * buffer,
     size_t bufferlen,
     size_t * readlen);
@@ -306,19 +369,5 @@ enum triefort_status triefort_iter_reset(
  * */
 enum triefort_status triefort_iter_next(
     struct triefort_iter * iter);
-
-/**
- * triefort_iter_hash
- *
- * Copy the hash the iterator is currently referencing into `hash`.
- *
- * Returns
- *    - triefort_ok - the current hash has been copied to `hash`.
- *    - triefort_err_iterator_done - the iterator has reached the end.
- */
-enum triefort_status triefort_iter_hash(
-    struct triefort_iter * iter,
-    void * hash,
-    size_t hashlen);
 
 #endif /* TRIEFORT_H */

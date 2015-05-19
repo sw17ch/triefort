@@ -65,8 +65,9 @@ TEST triefort_open__populates_internal_config(void) {
   struct triefort * fort = NULL;
   CHECK_CALL(open_test_triefort(&fort));
 
-  ASSERT_EQ_FMT(fort->cfg.depth, TEST_TRIE_DEPTH, "%u");
-  ASSERT_EQ_FMT(fort->cfg.hash_len, TEST_HASH_LEN, "%u");
+  ASSERT_EQ_FMT(TEST_TRIE_DEPTH, fort->cfg.depth, "%u");
+  ASSERT_EQ_FMT(TEST_HASH_LEN, fort->cfg.hash_len, "%u");
+  ASSERT_EQ_FMT(TEST_MAX_KEY_LEN, fort->cfg.max_key_len, "%u");
   ASSERT_STR_EQ(TEST_HASH_NAME, fort->cfg.hash_name);
 
   PASS();
