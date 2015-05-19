@@ -14,6 +14,7 @@
 #define TF struct triefort
 #define CFG struct triefort_cfg
 #define HCFG struct triefort_hash_cfg
+#define INFO struct triefort_info
 #define ITER struct triefort_iter
 
 #define PANIC() do { \
@@ -42,8 +43,9 @@ static bool dir_exists(const char * const path);
 static bool file_exists(const char * const path);
 static int recursive_remove(const char * const path);
 static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char ** path);
-static char * mk_hash_str(void * hash, size_t hashlen);
+static char * mk_hash_str(const void * const hash, const size_t hashlen);
 static S write_file(const char * const filename, const void * const data, const size_t datalen);
+static char * trie_path(const TF * const fort, const void * const hash);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
   if (0 == validate_cfg(cfg)) {
@@ -218,6 +220,21 @@ S triefort_put_with_key(TF * fort,
   return triefort_ok;
 }
 
+S triefort_info(const TF * const fort, const void * const hash, INFO ** const info) {
+  char * path = trie_path(fort, hash);
+  free(path);
+
+  *info = NULL;
+
+  return triefort_ok;
+}
+
+void triefort_info_free(INFO * const info) {
+  if (info) {
+    free(info);
+  }
+}
+
 static S store_cfg(const CFG * const cfg, const char * const path) {
   NULLCHK(cfg);
   NULLCHK(path);
@@ -360,7 +377,9 @@ static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char *
   free(dir_str);
 
   char * hash_str = mk_hash_str(hash, hashlen);
-  PANIC_IF(0 != mkdir(hash_str, DIRMODE));
+  if (!dir_exists(hash_str)) {
+    PANIC_IF(0 != mkdir(hash_str, DIRMODE));
+  }
   PANIC_IF(0 != chdir(hash_str));
   free(hash_str);
 
@@ -374,9 +393,45 @@ static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char *
   return triefort_ok;
 }
 
-static char * mk_hash_str(void * hash, size_t hashlen) {
+static char * trie_path(const TF * const fort, const void * const hash) {
+  const uint8_t * const hashb = hash;
+  const char * const fpath = fort->path;
+  const size_t width = fort->cfg.width;
+  const size_t depth = fort->cfg.depth;
+  const size_t hashlen = fort->cfg.hash_len;
+  const char * const hashstr = mk_hash_str(hash, hashlen);
+
+  size_t path_len = strlen(fpath) + 1 +             // path and trailing slash
+                    ((width * 2) * depth) + depth + // node and trailing slash for each node
+                    (hashlen * 2) +                 // hash itself
+                    1;                              // trailing null
+
+  char * path = calloc(1, path_len);
+
+  snprintf(path, path_len, "%s/", fpath);
+  size_t path_pos = path_len + 1;
+
+  for (size_t i = 0; i < depth; i++) {
+    for (size_t j = 0; j < width; j++) {
+      char * strpos = &path[path_pos + (j * 2)];
+      size_t hashix = (i * fort->cfg.width) + j;
+      snprintf(strpos, 3, "%02x", hashb[hashix]);
+    }
+    path_pos += (width * 2);
+    path[path_pos] = '/';
+    path_pos += 1;
+  }
+
+  snprintf(&path[path_pos], (hashlen * 2) + 1, "%s", hashstr);
+
+  free((void*)hashstr);
+
+  return path;
+}
+
+static char * mk_hash_str(const void * const hash, const size_t hashlen) {
   char * hs = calloc(1, (hashlen * 2) + 1);
-  uint8_t * hashb = hash;
+  const uint8_t * const hashb = hash;
 
   for (size_t i = 0; i < hashlen; i++) {
     char * h = &hs[i * 2];
