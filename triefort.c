@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <fts.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -28,6 +29,12 @@
   if (NULL == ARG) { return triefort_err_NULL_PTR; } \
 } while(0)
 
+#define DIRMODE ( \
+   (S_IRUSR | S_IWUSR | S_IXUSR) | \
+   (S_IRGRP |           S_IXGRP) | \
+   (S_IROTH |           S_IXOTH)   \
+  )
+
 static S store_cfg(const CFG * const cfg, const char * const path);
 static S load_cfg(CFG * const cfg, const char * const path);
 static bool validate_cfg(const CFG * const cfg);
@@ -40,11 +47,7 @@ S triefort_init(const char * const path, const CFG * const cfg) {
     return triefort_err_invalid_config;
   }
 
-  int mode = (S_IRUSR | S_IWUSR | S_IXUSR) |
-             (S_IRGRP |           S_IXGRP) |
-             (S_IROTH |           S_IXOTH);
-
-  if (0 != mkdir(path, mode)) {
+  if (0 != mkdir(path, DIRMODE)) {
     int e = errno;
 
     if (EEXIST == e) {
@@ -149,6 +152,58 @@ S triefort_config_get(TF * const fort, const CFG ** cfg) {
   NULLCHK(cfg);
 
   *cfg = &fort->cfg;
+
+  return triefort_ok;
+}
+
+S triefort_put(TF * fort,
+    void * key, size_t keylen,
+    void * buffer, size_t bufferlen,
+    void * hash, size_t hashlen) {
+  NULLCHK(fort);
+  NULLCHK(buffer);
+  NULLCHK(hash);
+
+  triefort_hasher_fn * hfn = fort->hcfg->hasher;
+  void * hashbuffer = NULL;
+  size_t hashbuffer_len = 0;
+
+  if (NULL != key) {
+    hashbuffer = key;
+    hashbuffer_len = keylen;
+  } else {
+    hashbuffer = buffer;
+    hashbuffer_len = bufferlen;
+  }
+
+  if (0 != hfn(hash, hashlen, hashbuffer, hashbuffer_len)) {
+    return triefort_err_hasher_error;
+  }
+
+  const char * old_dir = getcwd(NULL, 0);
+  PANIC_IF(0 != chdir(fort->path));
+
+  size_t dir_str_len = (fort->cfg.width * 2) + 1;
+  char * dir_str = calloc(1, dir_str_len);
+  uint8_t * hashb = hash;
+  for (size_t i = 0; i < fort->cfg.depth; i++) {
+    for (size_t j = 0; j < fort->cfg.width; j++) {
+      char * strpos = &dir_str[j * 2];
+      size_t hashix = (i * fort->cfg.width) + j;
+      snprintf(strpos, 3, "%02x", hashb[hashix]);
+    }
+    if (dir_exists(dir_str)) {
+      continue;
+    } else {
+      PANIC_IF(0 != mkdir(dir_str, DIRMODE));
+    }
+    PANIC_IF(0 != chdir(dir_str));
+  }
+
+  PANIC_IF(0 != chdir(old_dir));
+
+  free(dir_str);
+  free((void *)old_dir);
 
   return triefort_ok;
 }

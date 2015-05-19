@@ -24,6 +24,7 @@ enum triefort_status {
   triefort_err_config_could_not_be_opened,
   triefort_err_hash_name_mismatch,
   triefort_err_not_a_triefort,
+  triefort_err_hasher_error,
 };
 
 /**

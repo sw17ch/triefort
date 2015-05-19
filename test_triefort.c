@@ -150,15 +150,85 @@ TEST triefort_config_get__retrieves_the_triefort_config(void) {
 }
 
 TEST triefort_put__creates_key_hash(void) {
-  FAIL();
+  CHECK_CALL(create_test_triefort());
+
+  enum triefort_status s;
+  struct triefort * fort = NULL;
+
+  s = triefort_open(&fort, &hashcfg, TEST_TRIEFORT_PATH);
+  ASSERT_EQ_FMT(triefort_ok, s, "%d");
+
+  char key[] = "test key";
+  char buffer[] = "test buffer";
+  uint8_t hash[20] = { 0 };
+
+  s = triefort_put(
+      fort,
+      key, sizeof(key),
+      buffer, sizeof(buffer),
+      hash, sizeof(hash));
+
+  ASSERT_FALSE(buffer_all_null(hash, sizeof(hash)));
+  ASSERT_EQ(triefort_ok, s);
+
+  PASS();
 }
 
 TEST triefort_put__creates_buffer_hash(void) {
-  FAIL();
+  CHECK_CALL(create_test_triefort());
+
+  enum triefort_status s;
+  struct triefort * fort = NULL;
+
+  s = triefort_open(&fort, &hashcfg, TEST_TRIEFORT_PATH);
+  ASSERT_EQ_FMT(triefort_ok, s, "%d");
+
+  char buffer[] = "test buffer";
+  uint8_t hash[20] = { 0 };
+
+  s = triefort_put(
+      fort,
+      NULL, 0,
+      buffer, sizeof(buffer),
+      hash, sizeof(hash));
+
+  ASSERT_FALSE(buffer_all_null(hash, sizeof(hash)));
+  ASSERT_EQ(triefort_ok, s);
+
+  PASS();
 }
 
 TEST triefort_put__adds_prefix_directories(void) {
-  FAIL();
+  CHECK_CALL(create_test_triefort());
+
+  enum triefort_status s;
+  struct triefort * fort = NULL;
+
+  s = triefort_open(&fort, &hashcfg, TEST_TRIEFORT_PATH);
+  ASSERT_EQ_FMT(triefort_ok, s, "%d");
+
+  char buffer[] = "test buffer";
+  uint8_t hash[20] = { 0 };
+
+  s = triefort_put(
+      fort,
+      NULL, 0,
+      buffer, sizeof(buffer),
+      hash, sizeof(hash));
+
+  ASSERT_FALSE(buffer_all_null(hash, sizeof(hash)));
+  ASSERT_EQ(triefort_ok, s);
+
+  char path_buf[512];
+
+  snprintf(path_buf, sizeof(path_buf), "%s/%02x%02x/%02x%02x",
+      TEST_TRIEFORT_PATH,
+      hash[0], hash[1],
+      hash[2], hash[3]);
+
+  ASSERT(dir_exists(path_buf));
+
+  PASS();
 }
 
 TEST triefort_put__writes_buffer_data(void) {
