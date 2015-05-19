@@ -112,6 +112,17 @@ void destroy_triefort(void) {
   recursive_remove(TEST_TRIEFORT_PATH);
 }
 
+int open_test_triefort(struct triefort ** fort) {
+  CHECK_CALL(create_test_triefort());
+
+  *fort = NULL;
+  enum triefort_status s = triefort_open(fort, &hashcfg, TEST_TRIEFORT_PATH);
+  ASSERT_EQ_FMT(triefort_ok, s, "%d");
+  ASSERT(NULL != *fort);
+
+  PASS();
+}
+
 bool buffer_all_null(void * buffer, size_t len) {
   uint8_t * bufferb = buffer;
 

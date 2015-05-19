@@ -176,12 +176,12 @@ enum triefort_status triefort_config_get(
  */
 enum triefort_status triefort_put(
     struct triefort * fort,
-    void * key,
-    size_t keylen,
-    void * buffer,
-    size_t bufferlen,
-    void * hash,
-    size_t hashlen);
+    void * const key,
+    const size_t keylen,
+    void * const buffer,
+    const size_t bufferlen,
+    void * const hash,
+    const size_t hashlen);
 
 /**
  * triefort_info

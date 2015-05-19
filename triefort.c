@@ -41,7 +41,9 @@ static bool validate_cfg(const CFG * const cfg);
 static bool dir_exists(const char * const path);
 static bool file_exists(const char * const path);
 static int recursive_remove(const char * const path);
-static char * mk_hash_str(const TF * const fort, void * hash, size_t hashlen);
+static char * mk_hash_path_data(const TF * const fort, void * hash, size_t hashlen);
+static char * mk_hash_path_key(const TF * const fort, void * hash, size_t hashlen);
+static S write_file(const char * const filename, const void * const data, const size_t datalen);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
   if (0 == validate_cfg(cfg)) {
@@ -158,9 +160,9 @@ S triefort_config_get(TF * const fort, const CFG ** cfg) {
 }
 
 S triefort_put(TF * fort,
-    void * key, size_t keylen,
-    void * buffer, size_t bufferlen,
-    void * hash, size_t hashlen) {
+    void * const key, const size_t keylen,
+    void * const buffer, const size_t bufferlen,
+    void * const hash, const size_t hashlen) {
   NULLCHK(fort);
   NULLCHK(buffer);
   NULLCHK(hash);
@@ -200,26 +202,20 @@ S triefort_put(TF * fort,
     }
     PANIC_IF(0 != chdir(dir_str));
   }
+  free(dir_str);
 
-  enum triefort_status s = triefort_ok;
-
-  char * hash_str = mk_hash_str(fort, hash, hashlen);
-
-  if (file_exists(hash_str)) {
-    s = triefort_err_path_already_exists;
-  } else {
-    FILE * fh = fopen(hash_str, "w");
-    PANIC_IF(NULL == fh);
-    size_t wlen = fwrite(buffer, bufferlen, 1, fh);
-    if (wlen != 1) {
-      s = triefort_err_write_error;
+  S s = triefort_ok;
+  char * hash_path_data = mk_hash_path_data(fort, hash, hashlen);
+  if (triefort_ok == (s = write_file(hash_path_data, buffer, bufferlen))) {
+    if (NULL != key) {
+      char * hash_path_key = mk_hash_path_key(fort, hash, hashlen);
+      s = write_file(hash_path_key, buffer, bufferlen);
+      free(hash_path_key);
     }
   }
+  free(hash_path_data);
 
   PANIC_IF(0 != chdir(old_dir));
-
-  free(hash_str);
-  free(dir_str);
   free((void *)old_dir);
 
   return s;
@@ -342,13 +338,45 @@ static int recursive_remove(const char * const path) {
   return e;
 }
 
-static char * mk_hash_str(const TF * const fort, void * hash, size_t hashlen) {
-  char * hs = calloc(1, (fort->cfg.hash_len * 2) + 1);
+static char * mk_hash_path_data(const TF * const fort, void * hash, size_t hashlen) {
+  char * hs = calloc(1, (fort->cfg.hash_len * 2) + strlen(".data") + 1);
   uint8_t * hashb = hash;
 
   for (size_t i = 0; i < hashlen; i++) {
     char * h = &hs[i * 2];
     snprintf(h, 3, "%02x", hashb[i]);
   }
+  snprintf(&hs[hashlen * 2], 6, "%s", ".data");
+
   return hs;
+}
+
+static char * mk_hash_path_key(const TF * const fort, void * hash, size_t hashlen) {
+  char * hs = calloc(1, (fort->cfg.hash_len * 2) + strlen(".key") + 1);
+  uint8_t * hashb = hash;
+
+  for (size_t i = 0; i < hashlen; i++) {
+    char * h = &hs[i * 2];
+    snprintf(h, 3, "%02x", hashb[i]);
+  }
+  snprintf(&hs[hashlen * 2], 5, "%s", ".key");
+
+  return hs;
+}
+
+static S write_file(const char * const filename, const void * const data, const size_t datalen) {
+  S s;
+
+  if (file_exists(filename)) {
+    s = triefort_err_path_already_exists;
+  } else {
+    FILE * fh = fopen(filename, "w");
+    PANIC_IF(NULL == fh);
+    size_t wlen = fwrite(data, datalen, 1, fh);
+    if (wlen != 1) {
+      s = triefort_err_write_error;
+    }
+  }
+
+  return triefort_ok;
 }

@@ -24,6 +24,7 @@ int test_hasher(
 
 int create_test_triefort(void);
 void destroy_triefort(void);
+int open_test_triefort(struct triefort ** fort);
 
 bool buffer_all_null(void * buffer, size_t len);
 
