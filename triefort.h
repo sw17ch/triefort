@@ -88,6 +88,19 @@ struct triefort_hash_cfg {
 struct triefort_info {
   /* How much data is referenced by the hash. */
   size_t length;
+
+  /* A pointer to the key data. NULL if there's no key. */
+  void * key;
+
+  /* The length of the key. 0 if there's no key. */
+  size_t keylen;
+
+  /* A pointer to the hash. */
+  void * hash;
+
+  /* The length of the hash. Always equal to length in
+   * triefort config. */
+  size_t hashlen;
 };
 
 /**

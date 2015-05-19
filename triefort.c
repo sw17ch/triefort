@@ -45,7 +45,7 @@ static int recursive_remove(const char * const path);
 static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char ** path);
 static char * mk_hash_str(const void * const hash, const size_t hashlen);
 static S write_file(const char * const filename, const void * const data, const size_t datalen);
-static char * trie_path(const TF * const fort, const void * const hash);
+static char * trie_dir_path(const TF * const fort, const void * const hash, const char * filename);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
   if (0 == validate_cfg(cfg)) {
@@ -221,16 +221,71 @@ S triefort_put_with_key(TF * fort,
 }
 
 S triefort_info(const TF * const fort, const void * const hash, INFO ** const info) {
-  char * path = trie_path(fort, hash);
-  free(path);
+  NULLCHK(fort);
+  NULLCHK(hash);
+  NULLCHK(info);
 
-  *info = NULL;
+  char * path_data = trie_dir_path(fort, hash, "triefort.data");
+
+  if (file_exists(path_data)) {
+    struct stat s;
+    PANIC_IF(0 != stat(path_data, &s));
+
+    *info = calloc(1, sizeof(**info));
+    INFO * inf = *info;
+
+    inf->hash = calloc(1, fort->cfg.hash_len);
+    memcpy(inf->hash, hash, fort->cfg.hash_len);
+    inf->hashlen = fort->cfg.hash_len;
+    inf->length = s.st_size;
+
+    char * path_key = trie_dir_path(fort, hash, "triefort.key");
+    {
+      if (file_exists(path_key)) {
+        FILE * kh = fopen(path_key, "r");
+        PANIC_IF(NULL == kh);
+        PANIC_IF(0 != fstat(fileno(kh), &s));
+
+        inf->keylen = s.st_size;
+        inf->key = calloc(1, s.st_size);
+        PANIC_IF(1 != fread(inf->key, s.st_size, 1, kh));
+        fclose(kh);
+      } else {
+        inf->keylen = 0;
+        inf->key = NULL;
+      }
+    }
+    free(path_key);
+  } else {
+    *info = NULL;
+  }
+
+  free(path_data);
 
   return triefort_ok;
 }
 
+S triefort_info_with_key(
+    const TF * const fort,
+    const void * const key,
+    const size_t keylen,
+    INFO ** const info) {
+  NULLCHK(fort);
+  NULLCHK(key);
+  NULLCHK(info);
+
+  void * hash = calloc(1, fort->cfg.hash_len);
+  PANIC_IF(0 != fort->hcfg->hasher(hash, fort->cfg.hash_len, key, keylen));
+  S s = triefort_info(fort, hash, info);
+  free(hash);
+
+  return s;
+}
+
 void triefort_info_free(INFO * const info) {
   if (info) {
+    if (info->key) { free(info->key); }
+    free(info->hash);
     free(info);
   }
 }
@@ -393,7 +448,7 @@ static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char *
   return triefort_ok;
 }
 
-static char * trie_path(const TF * const fort, const void * const hash) {
+static char * trie_dir_path(const TF * const fort, const void * const hash, const char * filename) {
   const uint8_t * const hashb = hash;
   const char * const fpath = fort->path;
   const size_t fpath_len = strlen(fpath);
@@ -401,10 +456,12 @@ static char * trie_path(const TF * const fort, const void * const hash) {
   const size_t depth = fort->cfg.depth;
   const size_t hashlen = fort->cfg.hash_len;
   const char * const hashstr = mk_hash_str(hash, hashlen);
+  const size_t filename_overhead = filename == NULL ? 0 : 1 + strlen(filename);
 
   size_t path_len = fpath_len + 1 +                 // path and trailing slash
                     ((width * 2) * depth) + depth + // node and trailing slash for each node
                     (hashlen * 2) +                 // hash itself
+                    filename_overhead +
                     1;                              // trailing null
 
   char * path = calloc(1, path_len);
@@ -417,15 +474,23 @@ static char * trie_path(const TF * const fort, const void * const hash) {
       char * strpos = &path[path_pos + (j * 2)];
       size_t hashix = (i * fort->cfg.width) + j;
       snprintf(strpos, 3, "%02x", hashb[hashix]);
-      printf("path: %s\n", path);
     }
     path_pos += (width * 2);
     path[path_pos] = '/';
     path_pos += 1;
   }
 
-  snprintf(&path[path_pos], (hashlen * 2) + 1, "%s", hashstr);
-
+  if (NULL == filename) {
+    snprintf(&path[path_pos],
+        (hashlen * 2) + 1,
+        "%s",
+        hashstr);
+  } else {
+    snprintf(&path[path_pos],
+        (hashlen * 2) + filename_overhead + 1,
+        "%s/%s",
+        hashstr, filename);
+  }
   free((void*)hashstr);
 
   return path;
@@ -455,6 +520,7 @@ static S write_file(const char * const filename, const void * const data, const 
     if (wlen != 1) {
       s = triefort_err_write_error;
     }
+    fclose(fh);
   }
 
   return triefort_ok;

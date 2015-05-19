@@ -283,7 +283,40 @@ TEST triefort_info__gets_info_about_the_hash(void) {
   ASSERT_EQ(triefort_ok, s);
   ASSERT(info != NULL);
 
-  ASSERT_EQ(sizeof(buffer), info->length);
+  ASSERT_EQ_FMT(sizeof(buffer), info->length, "%lu");
+  ASSERT_STR_EQ(key, info->key);
+  ASSERT_EQ_FMT(sizeof(key), info->keylen, "%lu");
+
+  triefort_info_free(info);
+
+  PASS();
+}
+
+TEST triefort_info_with_key__gets_info_about_the_key(void) {
+  enum triefort_status s;
+  struct triefort * fort = NULL;
+
+  CHECK_CALL(open_test_triefort(&fort));
+
+  char key[] = "test key";
+  char buffer[] = "test buffer";
+  uint8_t hash[20] = { 0 };
+
+  s = triefort_put_with_key(
+      fort,
+      key, sizeof(key),
+      buffer, sizeof(buffer),
+      hash);
+  ASSERT_EQ(triefort_ok, s);
+
+  struct triefort_info * info = NULL;
+  s = triefort_info_with_key(fort, key, sizeof(key), &info);
+  ASSERT_EQ(triefort_ok, s);
+  ASSERT(info != NULL);
+
+  ASSERT_EQ_FMT(sizeof(buffer), info->length, "%lu");
+  ASSERT_STR_EQ(key, info->key);
+  ASSERT_EQ_FMT(sizeof(key), info->keylen, "%lu");
 
   triefort_info_free(info);
 
@@ -306,6 +339,7 @@ SUITE(suite_triefort) {
   RUN_TEST(triefort_put__writes_buffer_data);
   RUN_TEST(triefort_put_with_key__writes_key_data);
   RUN_TEST(triefort_info__gets_info_about_the_hash);
+  RUN_TEST(triefort_info_with_key__gets_info_about_the_key);
 }
 
 GREATEST_MAIN_DEFS();
