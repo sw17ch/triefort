@@ -26,6 +26,7 @@ enum triefort_status {
   triefort_err_not_a_triefort,
   triefort_err_hasher_error,
   triefort_err_write_error,
+  triefort_err_hash_does_not_exist,
 };
 
 /**
@@ -292,14 +293,15 @@ enum triefort_status triefort_get_stream_with_key(
     FILE ** const hdl);
 
 /**
- * triefort_get_stream_close
+ * triefort_stream_close
  *
  * Closes a file stream opened from the triefort.
  *
  * Returns
  *    - triefort_ok - the file was successfully closed
  */
-enum triefort_status triefort_get_stream_close(
+enum triefort_status triefort_stream_close(
+    struct triefort * const fort,
     FILE * const hdl);
 
 /**

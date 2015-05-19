@@ -242,7 +242,7 @@ S triefort_info(const TF * const fort, const void * const hash, INFO ** const in
     char * path_key = trie_dir_path(fort, hash, "triefort.key");
     {
       if (file_exists(path_key)) {
-        FILE * kh = fopen(path_key, "r");
+        FILE * kh = fopen(path_key, "rb");
         PANIC_IF(NULL == kh);
         PANIC_IF(0 != fstat(fileno(kh), &s));
 
@@ -290,11 +290,35 @@ void triefort_info_free(INFO * const info) {
   }
 }
 
+S triefort_get_stream(TF * const fort, const void * const hash, FILE ** const hdl) {
+  NULLCHK(fort);
+  NULLCHK(hash);
+  NULLCHK(hdl);
+
+  char * path_data = trie_dir_path(fort, hash, "triefort.data");
+  if (file_exists(path_data)) {
+    *hdl = fopen(path_data,"rb");
+    return triefort_ok;
+  } else {
+    *hdl = NULL;
+    return triefort_err_hash_does_not_exist;
+  }
+}
+
+S triefort_stream_close(TF * const fort, FILE * const hdl) {
+  (void)fort;
+  if (NULL != hdl) {
+    fclose(hdl);
+  }
+
+  return triefort_ok;
+}
+
 static S store_cfg(const CFG * const cfg, const char * const path) {
   NULLCHK(cfg);
   NULLCHK(path);
 
-  FILE * cfghdl = fopen(path, "w");
+  FILE * cfghdl = fopen(path, "wb");
   if (NULL == cfghdl) {
     return triefort_err_config_could_not_be_created;
   } else {
@@ -318,7 +342,7 @@ static S load_cfg(CFG * const cfg, const char * const path) {
   NULLCHK(cfg);
   NULLCHK(path);
 
-  FILE * cfghdl = fopen(path, "r");
+  FILE * cfghdl = fopen(path, "rb");
   if (NULL == cfghdl) {
     return triefort_err_config_could_not_be_opened;
   } else {
@@ -514,7 +538,7 @@ static S write_file(const char * const filename, const void * const data, const 
   if (file_exists(filename)) {
     s = triefort_err_path_already_exists;
   } else {
-    FILE * fh = fopen(filename, "w");
+    FILE * fh = fopen(filename, "wb");
     PANIC_IF(NULL == fh);
     size_t wlen = fwrite(data, datalen, 1, fh);
     if (wlen != 1) {
