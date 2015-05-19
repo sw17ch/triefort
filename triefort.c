@@ -331,6 +331,35 @@ S triefort_stream_close(TF * const fort, FILE * const hdl) {
   return triefort_ok;
 }
 
+S triefort_get(TF * const fort, void * hash, void * buffer, size_t bufferlen, size_t * readlen) {
+  NULLCHK(fort);
+  NULLCHK(hash);
+  NULLCHK(buffer);
+  NULLCHK(readlen);
+
+  FILE * stream = NULL;
+
+  CHECK_CALL(triefort_get_stream(fort, hash, &stream));
+  *readlen = fread(buffer, 1, bufferlen, stream);
+  fclose(stream);
+
+  return triefort_ok;
+}
+
+S triefort_get_with_key(TF * const fort, void * key, size_t keylen, void * buffer, size_t bufferlen, size_t * readlen) {
+  NULLCHK(fort);
+  NULLCHK(key);
+  NULLCHK(buffer);
+  NULLCHK(readlen);
+
+  void * hash = calloc(1, fort->cfg.hash_len);
+  PANIC_IF(0 != fort->hcfg->hasher(hash, fort->cfg.hash_len, key, keylen));
+  S s = triefort_get(fort, hash, buffer, bufferlen, readlen);
+  free(hash);
+
+  return s;
+}
+
 static S store_cfg(const CFG * const cfg, const char * const path) {
   NULLCHK(cfg);
   NULLCHK(path);
