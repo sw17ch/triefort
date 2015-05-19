@@ -232,7 +232,43 @@ TEST triefort_put__adds_prefix_directories(void) {
 }
 
 TEST triefort_put__writes_buffer_data(void) {
-  FAIL();
+  CHECK_CALL(create_test_triefort());
+
+  enum triefort_status s;
+  struct triefort * fort = NULL;
+
+  s = triefort_open(&fort, &hashcfg, TEST_TRIEFORT_PATH);
+  ASSERT_EQ_FMT(triefort_ok, s, "%d");
+
+  char buffer[] = "test buffer";
+  uint8_t hash[20] = { 0 };
+
+  s = triefort_put(
+      fort,
+      NULL, 0,
+      buffer, sizeof(buffer),
+      hash, sizeof(hash));
+
+  ASSERT_FALSE(buffer_all_null(hash, sizeof(hash)));
+  ASSERT_EQ(triefort_ok, s);
+
+  char hash_str[(TEST_HASH_LEN * 2) + 1] = {0};
+  char path_buf[512];
+
+  for (size_t i = 0; i < TEST_HASH_LEN; i++) {
+    char * h = &hash_str[i * 2];
+    snprintf(h, 3, "%02x", hash[i]);
+  }
+
+  snprintf(path_buf, sizeof(path_buf), "%s/%02x%02x/%02x%02x/%s",
+      TEST_TRIEFORT_PATH,
+      hash[0], hash[1],
+      hash[2], hash[3],
+      hash_str);
+
+  ASSERT(file_exists(path_buf));
+
+  PASS();
 }
 
 TEST triefort_put__writes_key_data(void) {
