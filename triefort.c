@@ -107,7 +107,7 @@ S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const
   }
 
   if (triefort_ok != s) {
-    free(*fort);
+    triefort_close(*fort);
     *fort = NULL;
   }
 
