@@ -58,6 +58,7 @@ TEST triefort_open__is_okay_when_triefort_exists(void) {
   struct triefort * fort = NULL;
   CHECK_CALL(open_test_triefort(&fort));
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -70,6 +71,7 @@ TEST triefort_open__populates_internal_config(void) {
   ASSERT_EQ_FMT(TEST_MAX_KEY_LEN, fort->cfg.max_key_len, "%u");
   ASSERT_STR_EQ(TEST_HASH_NAME, fort->cfg.hash_name);
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -86,6 +88,7 @@ TEST triefort_open__checks_hash_names(void) {
   ASSERT_EQ_FMT(triefort_err_hash_name_mismatch, s, "%d");
   ASSERT(NULL == fort);
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -136,6 +139,7 @@ TEST triefort_config_get__retrieves_the_triefort_config(void) {
   ASSERT_EQ_FMT(TEST_HASH_LEN, cfg->hash_len, "%d");
   ASSERT_STR_EQ(TEST_HASH_NAME, cfg->hash_name);
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -161,6 +165,7 @@ TEST triefort_put_with_key__uses_key_for_hash(void) {
   ASSERT(0 == memcmp(hash_expected, hash_actual, sizeof(hash_actual)));
   ASSERT_EQ(triefort_ok, s);
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -184,6 +189,7 @@ TEST triefort_put__uses_buffer_for_hash(void) {
   ASSERT(0 == memcmp(hash_expected, hash_actual, sizeof(hash_actual)));
   ASSERT_EQ(triefort_ok, s);
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -220,6 +226,7 @@ TEST triefort_put__writes_buffer_data(void) {
 
   ASSERT(file_exists(path_buf));
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -258,6 +265,7 @@ TEST triefort_put_with_key__writes_key_data(void) {
 
   ASSERT(file_exists(path_buf));
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -289,6 +297,7 @@ TEST triefort_info__gets_info_about_the_hash(void) {
 
   triefort_info_free(info);
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -320,6 +329,7 @@ TEST triefort_info_with_key__gets_info_about_the_key(void) {
 
   triefort_info_free(info);
 
+  triefort_close(fort);
   PASS();
 }
 
