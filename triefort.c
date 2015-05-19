@@ -396,26 +396,28 @@ static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char *
 static char * trie_path(const TF * const fort, const void * const hash) {
   const uint8_t * const hashb = hash;
   const char * const fpath = fort->path;
+  const size_t fpath_len = strlen(fpath);
   const size_t width = fort->cfg.width;
   const size_t depth = fort->cfg.depth;
   const size_t hashlen = fort->cfg.hash_len;
   const char * const hashstr = mk_hash_str(hash, hashlen);
 
-  size_t path_len = strlen(fpath) + 1 +             // path and trailing slash
+  size_t path_len = fpath_len + 1 +                 // path and trailing slash
                     ((width * 2) * depth) + depth + // node and trailing slash for each node
                     (hashlen * 2) +                 // hash itself
                     1;                              // trailing null
 
   char * path = calloc(1, path_len);
 
-  snprintf(path, path_len, "%s/", fpath);
-  size_t path_pos = path_len + 1;
+  snprintf(path, fpath_len + 2, "%s/", fpath);
+  size_t path_pos = fpath_len + 1;
 
   for (size_t i = 0; i < depth; i++) {
     for (size_t j = 0; j < width; j++) {
       char * strpos = &path[path_pos + (j * 2)];
       size_t hashix = (i * fort->cfg.width) + j;
       snprintf(strpos, 3, "%02x", hashb[hashix]);
+      printf("path: %s\n", path);
     }
     path_pos += (width * 2);
     path[path_pos] = '/';
