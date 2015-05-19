@@ -305,6 +305,23 @@ S triefort_get_stream(TF * const fort, const void * const hash, FILE ** const hd
   }
 }
 
+S triefort_get_stream_with_key(
+    TF * const fort,
+    const void * const key,
+    const size_t keylen,
+    FILE ** const hdl) {
+  NULLCHK(fort);
+  NULLCHK(key);
+  NULLCHK(hdl);
+
+  void * hash = calloc(1, fort->cfg.hash_len);
+  PANIC_IF(0 != fort->hcfg->hasher(hash, fort->cfg.hash_len, key, keylen));
+  S s = triefort_get_stream(fort, hash, hdl);
+  free(hash);
+
+  return s;
+}
+
 S triefort_stream_close(TF * const fort, FILE * const hdl) {
   (void)fort;
   if (NULL != hdl) {
