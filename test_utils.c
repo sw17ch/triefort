@@ -91,11 +91,6 @@ int test_hasher(void * hash, const size_t hashlen,
     }
   }
 
-  for (size_t i = 0; i < hashlen; i++) {
-    fprintf(stderr, "%02x", hashb[i]);
-  }
-  fprintf(stderr,"\n");
-
   return 0;
 }
 
@@ -133,4 +128,12 @@ bool buffer_all_null(void * buffer, size_t len) {
   }
 
   return true;
+}
+
+void print_hash(void * hash, size_t hashlen) {
+  uint8_t * hashb = hash;
+  for (size_t i = 0; i < hashlen; i++) {
+    fprintf(stderr, "%02x", hashb[i]);
+  }
+  fprintf(stderr,"\n");
 }

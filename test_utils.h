@@ -28,6 +28,8 @@ int open_test_triefort(struct triefort ** fort);
 
 bool buffer_all_null(void * buffer, size_t len);
 
+void print_hash(void * hash, size_t hashlen);
+
 extern const struct triefort_cfg testcfg;
 extern const struct triefort_hash_cfg hashcfg;
 
