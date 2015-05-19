@@ -161,11 +161,12 @@ S triefort_config_get(TF * const fort, const CFG ** cfg) {
 
 S triefort_put(TF * fort,
     void * const buffer, const size_t bufferlen,
-    void * const hash, const size_t hashlen) {
+    void * const hash) {
   NULLCHK(fort);
   NULLCHK(buffer);
   NULLCHK(hash);
 
+  const size_t hashlen = fort->cfg.hash_len;
   triefort_hasher_fn * hfn = fort->hcfg->hasher;
 
   if (0 != hfn(hash, hashlen, buffer, bufferlen)) {
@@ -189,13 +190,14 @@ S triefort_put(TF * fort,
 S triefort_put_with_key(TF * fort,
     void * const key, const size_t keylen,
     void * const buffer, const size_t bufferlen,
-    void * const hash, const size_t hashlen) {
+    void * const hash) {
   NULLCHK(fort);
   NULLCHK(key);
   NULLCHK(buffer);
   NULLCHK(hash);
 
   triefort_hasher_fn * hfn = fort->hcfg->hasher;
+  const size_t hashlen = fort->cfg.hash_len;
 
   if (0 != hfn(hash, hashlen, key, keylen)) {
     return triefort_err_hasher_error;

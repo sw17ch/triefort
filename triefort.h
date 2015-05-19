@@ -166,7 +166,8 @@ enum triefort_status triefort_config_get(
  * triefort_put
  *
  * Write the content in `buffer` to the triefort. The hash of `buffer` will be
- * the identifier for this content in the triefort.
+ * the identifier for this content in the triefort. `hash` must have enough
+ * space to accomodate the hash length defined in the triefort config.
  *
  * Returns
  *    - triefort_ok - `buffer` has been written to the triefort and `hash`
@@ -178,14 +179,14 @@ enum triefort_status triefort_put(
     struct triefort * fort,
     void * const buffer,
     const size_t bufferlen,
-    void * const hash,
-    const size_t hashlen);
+    void * const hash);
 
 /**
  * triefort_put_with_key
  *
  * Write the content in `buffer` to the triefort. The hash of `key` will be the
- * identifier for this content in the triefort.
+ * identifier for this content in the triefort. `hash` must have enough space
+ * to accomodate the hash length defined in the triefort config.
  *
  * Returns
  *    - triefort_ok - `buffer` has been written to the triefort and `hash`
@@ -199,13 +200,15 @@ enum triefort_status triefort_put_with_key(
     const size_t keylen,
     void * const buffer,
     const size_t bufferlen,
-    void * const hash,
-    const size_t hashlen);
+    void * const hash);
 
 /**
  * triefort_info
  *
- * Get information about the specified hash.
+ * Get information about the specified hash. `hash` must have enough space to
+ * accomodate the hash length defined in the triefort config.
+ *
+ * `info` must be freed with `triefort_info_free`.
  *
  * Returns
  *    - triefort_ok - `info` has been populated
@@ -214,13 +217,14 @@ enum triefort_status triefort_put_with_key(
 enum triefort_status triefort_info(
     const struct triefort * const fort,
     const void * const hash,
-    const size_t hashlen,
-    struct triefort_info * const info);
+    struct triefort_info ** const info);
 
 /**
  * triefort_info_with_key
  *
  * Get information about the hash of the specified key.
+ *
+ * `info` must be freed with `triefort_info_free`.
  *
  * Returns
  *    - triefort_ok - `info` has been populated
@@ -230,7 +234,7 @@ enum triefort_status triefort_info_with_key(
     const struct triefort * const fort,
     const void * const key,
     const size_t keylen,
-    struct triefort_info * const info);
+    struct triefort_info ** const info);
 
 /**
  * triefort_info_free
@@ -245,6 +249,8 @@ void triefort_info_free(
  *
  * Open a read-only file stream to the specified hash in the tirefort, if it
  * exists. If the hash does not exist in the triefort, an error is returned.
+ * `hash` must have enough space to accomodate the hash length defined in the
+ * triefort config.
  *
  * Returns
  *    - triefort_ok - `*hdl` points to a valid file stream referenced by `hash`
@@ -253,7 +259,6 @@ void triefort_info_free(
 enum triefort_status triefort_get_stream(
     struct triefort * const fort,
     const void * const hash,
-    const size_t hashlen,
     FILE ** const hdl);
 
 /**
@@ -289,7 +294,8 @@ enum triefort_status triefort_get_stream_close(
  *
  * Read the content identified by `hash` into `buffer`. At most `bufferlen`
  * bytes will be copied. After copying the data into the buffer `readlen` will
- * be the number of bytes copied into buffer.
+ * be the number of bytes copied into buffer. `hash` must have enough space to
+ * accomodate the hash length defined in the triefort config.
  *
  * Returns
  *    - triefort_ok - `buffer` contains all the data referenced by `hash`.
@@ -300,7 +306,6 @@ enum triefort_status triefort_get_stream_close(
 enum triefort_status triefort_get(
     struct triefort * const fort,
     void * hash,
-    size_t hashlen,
     void * buffer,
     size_t bufferlen,
     size_t * readlen);
@@ -369,5 +374,19 @@ enum triefort_status triefort_iter_reset(
  * */
 enum triefort_status triefort_iter_next(
     struct triefort_iter * iter);
+
+/**
+ * triefort_iter_info
+ *
+ * Get an info structure about the current member of the triefort.
+ *
+ * `info` must be freed with `triefort_info_free`.
+ *
+ * Returns
+ *    - triefort_ok - `*info` points to a valid structure.
+ */
+enum triefort_status triefort_iter_info(
+    struct triefort_iter * iter,
+    struct triefort_info ** info);
 
 #endif /* TRIEFORT_H */

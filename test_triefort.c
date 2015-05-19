@@ -154,7 +154,7 @@ TEST triefort_put_with_key__uses_key_for_hash(void) {
       fort,
       key, sizeof(key),
       buffer, sizeof(buffer),
-      hash_actual, sizeof(hash_actual));
+      hash_actual);
   ASSERT(0 == test_hasher(hash_expected, sizeof(hash_expected),
                           key, sizeof(key)));
 
@@ -177,7 +177,7 @@ TEST triefort_put__uses_buffer_for_hash(void) {
   s = triefort_put(
       fort,
       buffer, sizeof(buffer),
-      hash_actual, sizeof(hash_actual));
+      hash_actual);
   ASSERT(0 == test_hasher(hash_expected, sizeof(hash_expected),
                           buffer, sizeof(buffer)));
 
@@ -199,7 +199,7 @@ TEST triefort_put__writes_buffer_data(void) {
   s = triefort_put(
       fort,
       buffer, sizeof(buffer),
-      hash, sizeof(hash));
+      hash);
 
   ASSERT_FALSE(buffer_all_null(hash, sizeof(hash)));
   ASSERT_EQ(triefort_ok, s);
@@ -237,7 +237,7 @@ TEST triefort_put_with_key__writes_key_data(void) {
       fort,
       key, sizeof(key),
       buffer, sizeof(buffer),
-      hash, sizeof(hash));
+      hash);
 
   ASSERT_FALSE(buffer_all_null(hash, sizeof(hash)));
   ASSERT_EQ(triefort_ok, s);
