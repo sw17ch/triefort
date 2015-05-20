@@ -365,19 +365,15 @@ S triefort_iter_create(TF * const fort, ITER ** const iter) {
   NULLCHK(fort);
   NULLCHK(iter);
 
-  const char * const ptrs[] = { fort->path, 0 };
-  const int fts_options = FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV;
-
   *iter = calloc(1, sizeof(**iter));
   ITER * it = *iter;
 
   it->fort = fort;
   it->hash = calloc(1, fort->cfg.hash_len);
-  it->done = false;
-  it->fts = fts_open((char * const *)ptrs, fts_options, NULL);
+  it->fts = NULL;
   it->ent = NULL;
 
-  return triefort_iter_next(it);
+  return triefort_iter_reset(it);
 }
 
 S triefort_iter_next(ITER * const iter) {
@@ -442,7 +438,40 @@ S triefort_iter_data(ITER * const iter, void * buffer, size_t bufferlen, size_t 
     PANIC_IF(0 != chdir(old_dir));
   }
   free(old_dir);
+
   return triefort_ok;
+}
+
+S triefort_iter_key(ITER * const iter, void * key, size_t keylen, size_t * readlen) {
+  if (iter->done) {
+    return triefort_err_iterator_done;
+  }
+
+  char * old_dir = getcwd(NULL,0);
+  {
+    PANIC_IF(0 != chdir(iter->ent->fts_path));
+
+    FILE * fh = fopen("triefort.key", "rb");
+    *readlen = fread(key, 1, keylen, fh);
+    fclose(fh);
+
+    PANIC_IF(0 != chdir(old_dir));
+  }
+  free(old_dir);
+
+  return triefort_ok;
+}
+
+S triefort_iter_reset(ITER * iter) {
+  const char * const ptrs[] = { iter->fort->path, 0 };
+  const int fts_options = FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV;
+
+  if (NULL != iter->fts) { fts_close(iter->fts); }
+  iter->done = false;
+  iter->fts = fts_open((char * const *)ptrs, fts_options, NULL);
+  iter->ent = NULL;
+
+  return triefort_iter_next(iter);
 }
 
 static S store_cfg(const CFG * const cfg, const char * const path) {

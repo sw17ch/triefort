@@ -401,6 +401,22 @@ enum triefort_status triefort_iter_data(
     size_t * readlen);
 
 /**
+ * triefort_iter_key
+ *
+ * Copies the key of the node pointed to by the iterator into the provided
+ * buffer.
+ *
+ * Returns
+ *    - triefort_ok - `key` has been populated.
+ *    - triefort_err_iterator_done - the iterator doesn't have any more elements.
+ */
+enum triefort_status triefort_iter_key(
+    struct triefort_iter * const iter,
+    void * key,
+    size_t keylen,
+    size_t * readlen);
+
+/**
  * triefort_iter_next
  *
  * Advance the iterator to the next element.
