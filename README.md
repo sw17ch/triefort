@@ -12,19 +12,19 @@ trees of arbitrary hashes.
 | | /ab
 | | | /4e
 | | | | /ab4ec9a2
-| | | | | /data
+| | | | | /trifort.data
 | | | /a9
 | | | | /aba9aacf
-| | | | | /key
-| | | | | /data
+| | | | | /trifort.key
+| | | | | /trifort.data
 | | /3c
 | | | /d1
 | | | | /3cd1002a
-| | | | | /data
+| | | | | /trifort.data
 | | /4c
 | | | /02
 | | | | /4c02c3c8
-| | | | | /data
+| | | | | /trifort.data
 ```
 
 The `config` file encodes three parameters:
@@ -40,3 +40,11 @@ generate the hash and the value of the key will be stored in the `key` file.
 
 If no key is specified, a hash of the buffer will be used instead. No `key`
 file will be created.
+
+# Third Party Software
+
+* [greatest (60e25ce7)](https://github.com/silentbicycle/greatest)
+  * greatest.h
+* [sds (d86a9b85)](https://github.com/antirez/sds)
+  * sds.h
+  * sds.c
