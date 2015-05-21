@@ -181,7 +181,12 @@ S triefort_put(TF * fort,
   PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &sdata_path));
   sdata_path = sdscat(sdata_path, "/triefort.data");
 
-  S s = write_file(sdata_path, buffer, bufferlen);
+  S s;
+  if (!file_exists(sdata_path)) {
+    s = write_file(sdata_path, buffer, bufferlen);
+  } else {
+    s = triefort_err_hash_already_exists;
+  }
   sdsfree(sdata_path);
 
   return s;
@@ -373,6 +378,10 @@ S triefort_iter_next(ITER * const iter) {
       // TODO: probably more validation. Maybe?
       if (ent->fts_level == iter->fort->cfg.depth + 1) {
         iter->ent = ent;
+        mk_hash_from_hex_str(
+            iter->ent->fts_name,
+            iter->hash,
+            iter->fort->cfg.hash_len);
         return triefort_ok;
       }
       break;
@@ -393,11 +402,15 @@ void triefort_iter_free(ITER * const iter) {
   }
 }
 
+bool triefort_iter_is_done(ITER * iter) {
+  return iter->done;
+}
+
 S triefort_iter_hash(ITER * const iter, void * const hash) {
   if (iter->done) {
     return triefort_err_iterator_done;
   } else {
-    mk_hash_from_hex_str(iter->ent->fts_name, hash, iter->fort->cfg.hash_len);
+    memcpy(hash, iter->hash, iter->fort->cfg.hash_len);
     return triefort_ok;
   }
 }

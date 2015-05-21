@@ -1,6 +1,7 @@
 #ifndef TRIEFORT_H
 #define TRIEFORT_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -14,21 +15,24 @@
  */
 enum triefort_status {
   triefort_ok,
+
   triefort_err_PANIC,
   triefort_err_NULL_PTR,
+
+  triefort_err_config_could_not_be_created,
+  triefort_err_config_could_not_be_opened,
+  triefort_err_hash_already_exists,
+  triefort_err_hash_does_not_exist,
+  triefort_err_hash_name_mismatch,
+  triefort_err_hasher_error,
   triefort_err_invalid_config,
+  triefort_err_iterator_done,
+  triefort_err_key_too_long,
+  triefort_err_not_a_triefort,
   triefort_err_path_already_exists,
   triefort_err_path_could_not_be_created,
   triefort_err_path_could_not_be_destroyed,
-  triefort_err_config_could_not_be_created,
-  triefort_err_config_could_not_be_opened,
-  triefort_err_hash_name_mismatch,
-  triefort_err_not_a_triefort,
-  triefort_err_hasher_error,
   triefort_err_write_error,
-  triefort_err_hash_does_not_exist,
-  triefort_err_iterator_done,
-  triefort_err_key_too_long,
 };
 
 /**
@@ -367,6 +371,14 @@ enum triefort_status triefort_iter_create(
  * Frees resources used by the iterator.
  */
 void triefort_iter_free(
+    struct triefort_iter * iter);
+
+/**
+ * triefort_iter_is_done
+ *
+ * Returns true when the iterator has nothing else to iterate.
+ */
+bool triefort_iter_is_done(
     struct triefort_iter * iter);
 
 /**

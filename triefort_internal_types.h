@@ -21,8 +21,10 @@ struct triefort {
 
 struct triefort_iter {
   const struct triefort * fort;
-  void * hash;
   bool done;
+
+  /* Hash of the current entry. */
+  void * hash;
 
   FTS * fts;
   FTSENT * ent;
