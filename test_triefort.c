@@ -252,7 +252,7 @@ TEST triefort_info__gets_info_about_the_hash(void) {
   ASSERT(info != NULL);
 
   ASSERT_EQ_FMT(strlen(buffer), info->length, "%lu");
-  ASSERT_STR_EQ(key, info->key);
+  ASSERT(0 == memcmp(key, info->key, info->keylen));
   ASSERT_EQ_FMT(strlen(key), info->keylen, "%lu");
 
   triefort_info_free(info);
@@ -284,7 +284,7 @@ TEST triefort_info_with_key__gets_info_about_the_key(void) {
   ASSERT(info != NULL);
 
   ASSERT_EQ_FMT(strlen(buffer), info->length, "%lu");
-  ASSERT_STR_EQ(key, info->key);
+  ASSERT(0 == memcmp(key, info->key, info->keylen));
   ASSERT_EQ_FMT(strlen(key), info->keylen, "%lu");
 
   triefort_info_free(info);
@@ -347,9 +347,9 @@ TEST triefort_get_stream_with_key__opens_a_file_handle(void) {
   ASSERT_EQ(triefort_ok, s);
 
   // check that the stream has the right data
-  char rbuffer[sizeof(buffer)];
-  fread(rbuffer, strlen(rbuffer), 1, stream);
-  ASSERT_STR_EQ(buffer, rbuffer);
+  char rbuffer[sizeof(buffer)] = { 0 };
+  fread(rbuffer, strlen(buffer), 1, stream);
+  ASSERT(0 == memcmp(rbuffer, buffer, sizeof(rbuffer)));
 
   s = triefort_stream_close(fort, stream);
   ASSERT_EQ(triefort_ok, s);
@@ -424,6 +424,7 @@ TEST triefort_iter_create__makes_a_new_iterator(void) {
   ASSERT_EQ(fort, iter->fort);
   triefort_iter_free(iter);
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -463,6 +464,7 @@ TEST triefort_iter_create__points_to_the_first_entry(void) {
 
   triefort_iter_free(iter);
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -491,6 +493,8 @@ TEST triefort_iter_reset__moves_the_iterator_to_the_beginning(void) {
   ASSERT_EQ(triefort_ok, s);
   ASSERT(0 == memcmp(hash, iter_hash, sizeof(hash)));
 
+  triefort_iter_free(iter);
+  triefort_close(fort);
   PASS();
 }
 

@@ -86,41 +86,40 @@ S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const
   NULLCHK(hashcfg);
   NULLCHK(path);
 
-  sds cfgpath = sgetcwd();
-  cfgpath = sdscat(cfgpath, "/");
-  cfgpath = sdscat(cfgpath, path);
-  sds fortpath = sdsdup(cfgpath);
+  S s;
+
+  sds fortpath = sdsnew(path);
+  sds cfgpath = sdsdup(fortpath);
   cfgpath = sdscat(cfgpath, "/config");
 
   if (!dir_exists(fortpath)) {
-    return triefort_err_not_a_triefort;
+    s = triefort_err_not_a_triefort;
+  } else if (!file_exists(cfgpath)) {
+    s = triefort_err_not_a_triefort;
+  } else {
+    *fort = calloc(1, sizeof(**fort));
+    TF * f = *fort;
+
+    f->path = fortpath; // *fort takes ownership of `fortpath`
+    f->hcfg = hashcfg;
+
+    if (triefort_ok == (s = load_cfg(&f->cfg, cfgpath))) {
+      if (!validate_cfg(&(*fort)->cfg)) {
+        s = triefort_err_invalid_config;
+      }
+
+      if (0 != strncmp(hashcfg->fn_name, (*fort)->cfg.hash_name, MAX_LEN_HASH_NAME)) {
+        s = triefort_err_hash_name_mismatch;
+      }
+
+      if (triefort_ok != s) {
+        triefort_close(*fort);
+        *fort = NULL;
+      }
+    }
   }
 
-  if (!file_exists(cfgpath)) {
-    return triefort_err_not_a_triefort;
-  }
-
-  *fort = calloc(1, sizeof(**fort));
-  TF * f = *fort;
-
-  f->path = fortpath;
-  f->hcfg = hashcfg;
-  CHECK_CALL(load_cfg(&f->cfg, cfgpath));
-
-  S s = triefort_ok;
-
-  if (!validate_cfg(&(*fort)->cfg)) {
-    s = triefort_err_invalid_config;
-  }
-
-  if (0 != strncmp(hashcfg->fn_name, (*fort)->cfg.hash_name, MAX_LEN_HASH_NAME)) {
-    s = triefort_err_hash_name_mismatch;
-  }
-
-  if (triefort_ok != s) {
-    triefort_close(*fort);
-    *fort = NULL;
-  }
+  sdsfree(cfgpath);
 
   return s;
 }
@@ -177,7 +176,7 @@ S triefort_put(TF * fort,
     return triefort_err_hasher_error;
   }
 
-  sds sdata_path = sdsempty();
+  sds sdata_path = NULL;
   PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &sdata_path));
   sdata_path = sdscat(sdata_path, "/triefort.data");
 
