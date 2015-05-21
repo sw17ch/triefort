@@ -136,8 +136,8 @@ enum triefort_status triefort_init(
 /**
  * triefort_open
  *
- * Open the triefort at the specified `path`. `fort` will be a handle to the
- * triefort after it is loaded.
+ * Open an existing triefort at `path` already created by `triefort_init`.
+ * `fort` will be a handle to the triefort after it is loaded.
  *
  * Returns
  *    - triefort_ok - the triefort was opened successfull
@@ -232,7 +232,7 @@ enum triefort_status triefort_put_with_key(
  *
  * Returns
  *    - triefort_ok - `info` has been populated
- *    - triefort_err_does_not_exist - `hash` is not in the triefort
+ *    - triefort_err_hash_does_not_exist - `hash` is not in the triefort
  */
 enum triefort_status triefort_info(
     const struct triefort * const fort,
@@ -248,7 +248,8 @@ enum triefort_status triefort_info(
  *
  * Returns
  *    - triefort_ok - `info` has been populated
- *    - triefort_err_does_not_exist - the hash of `key` is not in the triefort
+ *    - triefort_err_hash_does_not_exist - the hash of `key` is not in the
+ *      triefort
  */
 enum triefort_status triefort_info_with_key(
     const struct triefort * const fort,
@@ -274,7 +275,7 @@ void triefort_info_free(
  *
  * Returns
  *    - triefort_ok - `*hdl` points to a valid file stream referenced by `hash`
- *    - triefort_err_does_not_exist - `hash` does not reference a real path
+ *    - triefort_err_hash_does_not_exist - `hash` does not reference a real path
  */
 enum triefort_status triefort_get_stream(
     struct triefort * const fort,
@@ -290,7 +291,8 @@ enum triefort_status triefort_get_stream(
  *
  * Returns
  *    - triefort_ok - `*hdl` points to a valid file stream referenced by `hash`
- *    - triefort_err_does_not_exist - the hash of `key` does not reference a real path
+ *    - triefort_err_hash_does_not_exist - the hash of `key` does not reference
+ *      a real path
  */
 enum triefort_status triefort_get_stream_with_key(
     struct triefort * const fort,
@@ -322,7 +324,8 @@ enum triefort_status triefort_stream_close(
  *    - triefort_ok - `buffer` contains all the data referenced by `hash`.
  *    - triefort_err_would_overflow - `buffer` contains `bufferlen` bytes of
  *      data. The hash references more data than would fit.
- *    - triefort_err_does_not_exist - the hash does not exist in the triefort.
+ *    - triefort_err_hash_does_not_exist - the hash does not exist in the
+ *      triefort.
  */
 enum triefort_status triefort_get(
     struct triefort * const fort,
@@ -342,7 +345,8 @@ enum triefort_status triefort_get(
  *    - triefort_ok - `buffer` contains all the data referenced by `hash`.
  *    - triefort_err_would_overflow - `buffer` contains `bufferlen` bytes of
  *      data. The hash references more data than would fit.
- *    - triefort_err_does_not_exist - the hash does not exist in the triefort.
+ *    - triefort_err_hash_does_not_exist - the hash does not exist in the
+ *      triefort.
  */
 enum triefort_status triefort_get_with_key(
     struct triefort * const fort,
@@ -351,6 +355,62 @@ enum triefort_status triefort_get_with_key(
     void * buffer,
     size_t bufferlen,
     size_t * readlen);
+
+/**
+ * TODO: triefort_drop
+ *
+ * Drop a hash and its data from the triefort.
+ *
+ * Returns
+ *    - triefort_ok - `hash` was dropped from the triefort
+ *    - triefort_err_hash_does_not_exist - the hash did not exist in the
+ *      triefort
+ */
+enum triefort_status triefort_drop(
+    struct triefort * const fort,
+    const void * const hash);
+
+/**
+ * TODO: triefort_drop_with_key
+ *
+ * Drop a key and its data from the triefort.
+ *
+ * Returns
+ *    - triefort_ok - `hash` was dropped from the triefort
+ *    - triefort_err_hash_does_not_exist - the hash did not exist in the
+ *      triefort
+ */
+enum triefort_status triefort_drop_with_key(
+    struct triefort * const fort,
+    const void * const key,
+    const size_t keylen);
+
+/**
+ * TODO: triefort_exists
+ *
+ * Check if a hash is present in the triefort.
+ *
+ * Returns
+ *    - triefort_ok - `hash` exists
+ *    - triefort_err_hash_does_not_exist - `hash` does not exist
+ */
+enum triefort_status triefort_exists(
+    struct triefort * const fort,
+    const void * const hash);
+
+/**
+ * TODO: triefort_exists
+ *
+ * Check if a key is present in the triefort.
+ *
+ * Returns
+ *    - triefort_ok - `key` exists
+ *    - triefort_err_hash_does_not_exist - `hash` does not exist
+ */
+enum triefort_status triefort_exists_with_key(
+    struct triefort * const fort,
+    const void * const key,
+    const size_t keylen);
 
 /**
  * triefort_iter_create
