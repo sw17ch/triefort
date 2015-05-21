@@ -779,6 +779,8 @@ static S mk_info_from_path(const TF * const fort, sds path, const void * const h
   data_path = sdscat(data_path, "/triefort.data");
   key_path = sdscat(key_path, "/triefort.key");
 
+  S status = triefort_ok;
+
   if (file_exists(data_path)) {
     struct stat s;
     PANIC_IF(0 != stat(data_path, &s));
@@ -804,10 +806,12 @@ static S mk_info_from_path(const TF * const fort, sds path, const void * const h
       inf->keylen = 0;
       inf->key = NULL;
     }
+  } else {
+    status = triefort_err_hash_does_not_exist;
   }
 
   sdsfree(data_path);
   sdsfree(key_path);
 
-  return triefort_ok;
+  return status;
 }
