@@ -17,7 +17,7 @@ TEST triefort_init__creates_triefort_at_path(void) {
 
 TEST triefort_init__creates_triefort_config_under_path(void) {
   CHECK_CALL(create_test_triefort());
-  ASSERT(file_exists(TEST_TRIEFORT_PATH "/config"));
+  ASSERT(file_exists(TEST_TRIEFORT_PATH "/.config"));
   PASS();
 }
 
@@ -455,6 +455,7 @@ TEST triefort_exists__is_ok_when_hash_exists(void) {
   CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
   ASSERT_EQ(triefort_ok, triefort_exists(fort, hash));
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -468,6 +469,7 @@ TEST triefort_exists_with_key__is_ok_when_hash_exists(void) {
   CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
   ASSERT_EQ(triefort_ok, triefort_exists_with_key(fort, key, strlen(key)));
 
+  triefort_close(fort);
   PASS();
 }
 
@@ -584,6 +586,7 @@ TEST triefort_iter_info__gets_info_about_the_current_element(void) {
   ASSERT(0 == memcmp(key, info->key, info->keylen));
   ASSERT_EQ_FMT(strlen(key), info->keylen, "%lu");
 
+  triefort_info_free(info);
   triefort_iter_free(iter);
   triefort_close(fort);
   PASS();
