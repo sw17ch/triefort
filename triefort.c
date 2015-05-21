@@ -45,11 +45,11 @@ static bool validate_cfg(const CFG * const cfg);
 static bool dir_exists(const char * const path);
 static bool file_exists(const char * const path);
 static int recursive_remove(const char * const path);
-static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char ** path);
+static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, sds * path);
 static char * mk_hash_str(const void * const hash, const size_t hashlen);
 static void mk_hash_from_hex_str(const char * const str, void * const hash, const size_t hashlen);
 static S write_file(const char * const filename, const void * const data, const size_t datalen);
-static char * trie_dir_path(const TF * const fort, const void * const hash, const char * filename);
+static sds trie_dir_path(const TF * const fort, const void * const hash, const char * filename);
 static sds sgetcwd(void);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
@@ -113,7 +113,7 @@ S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const
     s = triefort_err_invalid_config;
   }
 
-  if (0 != strcmp(hashcfg->fn_name, (*fort)->cfg.hash_name)) {
+  if (0 != strncmp(hashcfg->fn_name, (*fort)->cfg.hash_name, MAX_LEN_HASH_NAME)) {
     s = triefort_err_hash_name_mismatch;
   }
 
@@ -177,18 +177,14 @@ S triefort_put(TF * fort,
     return triefort_err_hasher_error;
   }
 
-  char * data_path = NULL;
-  PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &data_path));
-  char * old_dir = getcwd(NULL,0);
-  PANIC_IF(0 != chdir(data_path));
-  {
-    CHECK_CALL(write_file("triefort.data", buffer, bufferlen));
-  }
-  PANIC_IF(0 != chdir(old_dir));
-  free(old_dir);
-  free(data_path);
+  sds sdata_path = sdsempty();
+  PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &sdata_path));
+  sdata_path = sdscat(sdata_path, "/triefort.data");
 
-  return triefort_ok;
+  S s = write_file(sdata_path, buffer, bufferlen);
+  sdsfree(sdata_path);
+
+  return s;
 }
 
 S triefort_put_with_key(TF * fort,
@@ -207,19 +203,22 @@ S triefort_put_with_key(TF * fort,
     return triefort_err_hasher_error;
   }
 
-  char * data_path = NULL;
-  PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &data_path));
-  char * old_dir = getcwd(NULL,0);
-  PANIC_IF(0 != chdir(data_path));
-  {
-    CHECK_CALL(write_file("triefort.key", key, keylen));
-    CHECK_CALL(write_file("triefort.data", buffer, bufferlen));
-  }
-  PANIC_IF(0 != chdir(old_dir));
-  free(old_dir);
-  free(data_path);
+  sds sdata_path = NULL;
+  PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &sdata_path));
 
-  return triefort_ok;
+  sds skey_path = sdsdup(sdata_path);
+  sdata_path = sdscat(sdata_path, "/triefort.data");
+  skey_path = sdscat(skey_path, "/triefort.key");
+
+  S s = write_file(skey_path, key, keylen);
+  if (triefort_ok == s) {
+    s = write_file(sdata_path, buffer, bufferlen);
+  }
+
+  sdsfree(skey_path);
+  sdsfree(sdata_path);
+
+  return s;
 }
 
 S triefort_info(const TF * const fort, const void * const hash, INFO ** const info) {
@@ -227,7 +226,7 @@ S triefort_info(const TF * const fort, const void * const hash, INFO ** const in
   NULLCHK(hash);
   NULLCHK(info);
 
-  char * path_data = trie_dir_path(fort, hash, "triefort.data");
+  sds path_data = trie_dir_path(fort, hash, "triefort.data");
 
   if (file_exists(path_data)) {
     struct stat s;
@@ -241,7 +240,7 @@ S triefort_info(const TF * const fort, const void * const hash, INFO ** const in
     inf->hashlen = fort->cfg.hash_len;
     inf->length = s.st_size;
 
-    char * path_key = trie_dir_path(fort, hash, "triefort.key");
+    sds path_key = trie_dir_path(fort, hash, "triefort.key");
     {
       if (file_exists(path_key)) {
         FILE * kh = fopen(path_key, "rb");
@@ -257,12 +256,12 @@ S triefort_info(const TF * const fort, const void * const hash, INFO ** const in
         inf->key = NULL;
       }
     }
-    free(path_key);
+    sdsfree(path_key);
   } else {
     *info = NULL;
   }
 
-  free(path_data);
+  sdsfree(path_data);
 
   return triefort_ok;
 }
@@ -297,14 +296,19 @@ S triefort_get_stream(TF * const fort, const void * const hash, FILE ** const hd
   NULLCHK(hash);
   NULLCHK(hdl);
 
-  char * path_data = trie_dir_path(fort, hash, "triefort.data");
+  S s = triefort_ok;
+
+  sds path_data = trie_dir_path(fort, hash, "triefort.data");
   if (file_exists(path_data)) {
     *hdl = fopen(path_data,"rb");
-    return triefort_ok;
   } else {
     *hdl = NULL;
-    return triefort_err_hash_does_not_exist;
+    s = triefort_err_hash_does_not_exist;
   }
+
+  sdsfree(path_data);
+
+  return s;
 }
 
 S triefort_get_stream_with_key(
@@ -392,6 +396,8 @@ S triefort_iter_next(ITER * const iter) {
     case FTS_DP: case FTS_SL: case FTS_SLNONE: case FTS_DEFAULT:
       break;
     case FTS_D:
+      // We've found a directory at our level.
+      // TODO: probably more validation. Maybe?
       if (ent->fts_level == iter->fort->cfg.depth + 1) {
         iter->ent = ent;
         return triefort_ok;
@@ -428,17 +434,14 @@ S triefort_iter_data(ITER * const iter, void * buffer, size_t bufferlen, size_t 
     return triefort_err_iterator_done;
   }
 
-  char * old_dir = getcwd(NULL,0);
+  sds data_path = sdsnew(iter->ent->fts_path);
+  data_path = sdscat(data_path, "/triefort.data");
   {
-    PANIC_IF(0 != chdir(iter->ent->fts_path));
-
-    FILE * fh = fopen("triefort.data", "rb");
+    FILE * fh = fopen(data_path, "rb");
     *readlen = fread(buffer, 1, bufferlen, fh);
     fclose(fh);
-
-    PANIC_IF(0 != chdir(old_dir));
   }
-  free(old_dir);
+  sdsfree(data_path);
 
   return triefort_ok;
 }
@@ -448,17 +451,14 @@ S triefort_iter_key(ITER * const iter, void * key, size_t keylen, size_t * readl
     return triefort_err_iterator_done;
   }
 
-  char * old_dir = getcwd(NULL,0);
+  sds key_path = sdsnew(iter->ent->fts_path);
+  key_path = sdscat(key_path, "/triefort.key");
   {
-    PANIC_IF(0 != chdir(iter->ent->fts_path));
-
-    FILE * fh = fopen("triefort.key", "rb");
+    FILE * fh = fopen(key_path, "rb");
     *readlen = fread(key, 1, keylen, fh);
     fclose(fh);
-
-    PANIC_IF(0 != chdir(old_dir));
   }
-  free(old_dir);
+  sdsfree(key_path);
 
   return triefort_ok;
 }
@@ -594,100 +594,79 @@ static int recursive_remove(const char * const path) {
   return e;
 }
 
-static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, char ** path) {
-  const char * old_dir = getcwd(NULL, 0);
-  PANIC_IF(0 != chdir(fort->path));
+static S mk_trie_dirs(const TF * const fort, void * hash, size_t hashlen, sds * path) {
+  *path = sdsnew(fort->path);
+  *path = sdscat(*path, "/");
 
-  size_t dir_str_len = (fort->cfg.width * 2) + 1;
-  char * dir_str = calloc(1, dir_str_len);
+  char dir_node[(fort->cfg.width * 2) + 2];
+
   uint8_t * hashb = hash;
   for (size_t i = 0; i < fort->cfg.depth; i++) {
     for (size_t j = 0; j < fort->cfg.width; j++) {
-      char * strpos = &dir_str[j * 2];
+      char * strpos = &dir_node[j * 2];
       size_t hashix = (i * fort->cfg.width) + j;
-      snprintf(strpos, 3, "%02x", hashb[hashix]);
+
+      snprintf(strpos, sizeof(dir_node), "%02x/", hashb[hashix]);
     }
-    if (dir_exists(dir_str)) {
+    *path = sdscat(*path, dir_node);
+
+    if (dir_exists(*path)) {
       continue;
     } else {
-      PANIC_IF(0 != mkdir(dir_str, DIRMODE));
+      PANIC_IF(0 != mkdir(*path, DIRMODE));
     }
-    PANIC_IF(0 != chdir(dir_str));
-  }
-  free(dir_str);
-
-  char * hash_str = mk_hash_str(hash, hashlen);
-  if (!dir_exists(hash_str)) {
-    PANIC_IF(0 != mkdir(hash_str, DIRMODE));
-  }
-  PANIC_IF(0 != chdir(hash_str));
-  free(hash_str);
-
-  if (path) {
-    *path = getcwd(NULL,0);
   }
 
-  PANIC_IF(0 != chdir(old_dir));
-  free((void *)old_dir);
+  sds hash_str = mk_hash_str(hash, hashlen);
+  *path = sdscatsds(*path, hash_str);
+  sdsfree(hash_str);
+
+  if (!dir_exists(*path)) {
+    PANIC_IF(0 != mkdir(*path, DIRMODE));
+  }
 
   return triefort_ok;
 }
 
-static char * trie_dir_path(const TF * const fort, const void * const hash, const char * filename) {
-  const uint8_t * const hashb = hash;
-  const char * const fpath = fort->path;
-  const size_t fpath_len = strlen(fpath);
+static sds trie_dir_path(const TF * const fort, const void * const hash, const char * filename) {
   const size_t width = fort->cfg.width;
   const size_t depth = fort->cfg.depth;
   const size_t hashlen = fort->cfg.hash_len;
-  const char * const hashstr = mk_hash_str(hash, hashlen);
-  const size_t filename_overhead = filename == NULL ? 0 : 1 + strlen(filename);
-
-  size_t path_len = fpath_len + 1 +                 // path and trailing slash
-                    ((width * 2) * depth) + depth + // node and trailing slash for each node
-                    (hashlen * 2) +                 // hash itself
-                    filename_overhead +
-                    1;                              // trailing null
-
-  char * path = calloc(1, path_len);
-
-  snprintf(path, fpath_len + 2, "%s/", fpath);
-  size_t path_pos = fpath_len + 1;
+  const uint8_t * const hashb = hash;
+  char dir_node[(width * 2) + 2];
+  sds path = sdsdup(fort->path);
 
   for (size_t i = 0; i < depth; i++) {
+    path = sdscat(path, "/");
     for (size_t j = 0; j < width; j++) {
-      char * strpos = &path[path_pos + (j * 2)];
-      size_t hashix = (i * fort->cfg.width) + j;
+      char * strpos = &dir_node[j * 2];
+      size_t hashix = (i * width) + j;
       snprintf(strpos, 3, "%02x", hashb[hashix]);
     }
-    path_pos += (width * 2);
-    path[path_pos] = '/';
-    path_pos += 1;
+    path = sdscat(path, dir_node);
   }
+  path = sdscat(path, "/");
 
-  if (NULL == filename) {
-    snprintf(&path[path_pos],
-        (hashlen * 2) + 1,
-        "%s",
-        hashstr);
-  } else {
-    snprintf(&path[path_pos],
-        (hashlen * 2) + filename_overhead + 1,
-        "%s/%s",
-        hashstr, filename);
+  sds shash = mk_hash_str(hash, hashlen);
+  path = sdscat(path, shash);
+  sdsfree(shash);
+
+  if (NULL != filename) {
+    path = sdscat(path, "/");
+    path = sdscat(path, filename);
   }
-  free((void*)hashstr);
 
   return path;
 }
 
-static char * mk_hash_str(const void * const hash, const size_t hashlen) {
-  char * hs = calloc(1, (hashlen * 2) + 1);
+static sds mk_hash_str(const void * const hash, const size_t hashlen) {
   const uint8_t * const hashb = hash;
+  char node[3] = { 0 };
+  sds hs = sdsempty();
 
   for (size_t i = 0; i < hashlen; i++) {
-    char * h = &hs[i * 2];
-    snprintf(h, 3, "%02x", hashb[i]);
+    snprintf(node, sizeof(node), "%02x", hashb[i]);
+    hs = sdscat(hs, node);
   }
 
   return hs;
