@@ -197,8 +197,8 @@ S triefort_put(TF * fort,
 }
 
 S triefort_put_with_key(TF * fort,
-    void * const key, const size_t keylen,
-    void * const buffer, const size_t bufferlen,
+    const void * const key, const size_t keylen,
+    const void * const buffer, const size_t bufferlen,
     void * const hash) {
   NULLCHK(fort);
   NULLCHK(key);

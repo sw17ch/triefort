@@ -216,9 +216,9 @@ enum triefort_status triefort_put(
  */
 enum triefort_status triefort_put_with_key(
     struct triefort * fort,
-    void * const key,
+    const void * const key,
     const size_t keylen,
-    void * const buffer,
+    const void * const buffer,
     const size_t bufferlen,
     void * const hash);
 
