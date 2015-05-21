@@ -498,6 +498,35 @@ TEST triefort_iter_reset__moves_the_iterator_to_the_beginning(void) {
   PASS();
 }
 
+TEST triefort_iter_info__gets_info_about_the_current_element(void) {
+  char * key = "iter test!";
+  char buffer[] = "some buffer for testing iterators.";
+  uint8_t hash[20] = { 0 };
+
+  struct triefort * fort = NULL;
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
+
+  struct triefort_iter * iter = NULL;
+  enum triefort_status s;
+
+  s = triefort_iter_create(fort, &iter);
+  ASSERT_EQ(triefort_ok, s);
+
+  struct triefort_info * info = NULL;
+  s = triefort_iter_info(iter, &info);
+  ASSERT_EQ(triefort_ok, s);
+  ASSERT(NULL != info);
+
+  ASSERT_EQ_FMT(strlen(buffer), info->length, "%lu");
+  ASSERT_EQ_FMT(strlen(key), info->keylen, "%lu");
+  ASSERT(0 == memcmp(key, info->key, info->keylen));
+  ASSERT_EQ_FMT(strlen(key), info->keylen, "%lu");
+
+  triefort_iter_free(iter);
+  triefort_close(fort);
+  PASS();
+}
+
 SUITE(suite_triefort) {
   RUN_TEST(triefort_init__creates_triefort_at_path);
   RUN_TEST(triefort_init__creates_triefort_config_under_path);
@@ -522,6 +551,7 @@ SUITE(suite_triefort) {
   RUN_TEST(triefort_iter_create__makes_a_new_iterator);
   RUN_TEST(triefort_iter_create__points_to_the_first_entry);
   RUN_TEST(triefort_iter_reset__moves_the_iterator_to_the_beginning);
+  RUN_TEST(triefort_iter_info__gets_info_about_the_current_element);
 }
 
 GREATEST_MAIN_DEFS();

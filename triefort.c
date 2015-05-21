@@ -51,6 +51,7 @@ static void mk_hash_from_hex_str(const char * const str, void * const hash, cons
 static S write_file(const char * const filename, const void * const data, const size_t datalen);
 static sds trie_dir_path(const TF * const fort, const void * const hash, const char * filename);
 static sds sgetcwd(void);
+static S mk_info_from_path(const TF * const fort, sds path, const void * const hash, INFO ** info);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
   if (0 == validate_cfg(cfg)) {
@@ -225,44 +226,13 @@ S triefort_info(const TF * const fort, const void * const hash, INFO ** const in
   NULLCHK(hash);
   NULLCHK(info);
 
-  sds path_data = trie_dir_path(fort, hash, "triefort.data");
+  sds path = trie_dir_path(fort, hash, NULL);
 
-  if (file_exists(path_data)) {
-    struct stat s;
-    PANIC_IF(0 != stat(path_data, &s));
+  S s = mk_info_from_path(fort, path, hash, info);
 
-    *info = calloc(1, sizeof(**info));
-    INFO * inf = *info;
+  sdsfree(path);
 
-    inf->hash = calloc(1, fort->cfg.hash_len);
-    memcpy(inf->hash, hash, fort->cfg.hash_len);
-    inf->hashlen = fort->cfg.hash_len;
-    inf->length = s.st_size;
-
-    sds path_key = trie_dir_path(fort, hash, "triefort.key");
-    {
-      if (file_exists(path_key)) {
-        FILE * kh = fopen(path_key, "rb");
-        PANIC_IF(NULL == kh);
-        PANIC_IF(0 != fstat(fileno(kh), &s));
-
-        inf->keylen = s.st_size;
-        inf->key = calloc(1, s.st_size);
-        PANIC_IF(1 != fread(inf->key, s.st_size, 1, kh));
-        fclose(kh);
-      } else {
-        inf->keylen = 0;
-        inf->key = NULL;
-      }
-    }
-    sdsfree(path_key);
-  } else {
-    *info = NULL;
-  }
-
-  sdsfree(path_data);
-
-  return triefort_ok;
+  return s;
 }
 
 S triefort_info_with_key(
@@ -472,6 +442,17 @@ S triefort_iter_reset(ITER * iter) {
   iter->ent = NULL;
 
   return triefort_iter_next(iter);
+}
+
+S triefort_iter_info(ITER * iter, INFO ** info) {
+  NULLCHK(iter);
+  NULLCHK(info);
+
+  sds path = sdsnew(iter->ent->fts_path);
+  S s = mk_info_from_path(iter->fort, path, iter->hash, info);
+  sdsfree(path);
+
+  return s;
 }
 
 static S store_cfg(const CFG * const cfg, const char * const path) {
@@ -709,4 +690,44 @@ static sds sgetcwd(void) {
   sds s = sdsnew(c);
   free(c);
   return s;
+}
+
+static S mk_info_from_path(const TF * const fort, sds path, const void * const hash, INFO ** info) {
+  sds data_path = sdsdup(path);
+  sds key_path = sdsdup(path);
+
+  data_path = sdscat(data_path, "/triefort.data");
+  key_path = sdscat(key_path, "/triefort.key");
+
+  if (file_exists(data_path)) {
+    struct stat s;
+    PANIC_IF(0 != stat(data_path, &s));
+
+    *info = calloc(1, sizeof(**info));
+    INFO * inf = *info;
+
+    inf->hash = calloc(1, fort->cfg.hash_len);
+    memcpy(inf->hash, hash, fort->cfg.hash_len);
+    inf->hashlen = fort->cfg.hash_len;
+    inf->length = s.st_size;
+
+    if (file_exists(key_path)) {
+      FILE * kh = fopen(key_path, "rb");
+      PANIC_IF(NULL == kh);
+      PANIC_IF(0 != fstat(fileno(kh), &s));
+
+      inf->keylen = s.st_size;
+      inf->key = calloc(1, s.st_size);
+      PANIC_IF(1 != fread(inf->key, s.st_size, 1, kh));
+      fclose(kh);
+    } else {
+      inf->keylen = 0;
+      inf->key = NULL;
+    }
+  }
+
+  sdsfree(data_path);
+  sdsfree(key_path);
+
+  return triefort_ok;
 }
