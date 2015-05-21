@@ -364,12 +364,18 @@ S triefort_drop(TF * const fort, const void * const hash) {
 
   sds path = trie_dir_path(fort, hash, NULL);
 
+  S s;
+
   if (dir_exists(path)) {
     recursive_remove(path);
-    return triefort_ok;
+    s = triefort_ok;
   } else {
-    return triefort_err_hash_does_not_exist;
+    s = triefort_err_hash_does_not_exist;
   }
+
+  sdsfree(path);
+
+  return s;
 }
 
 S triefort_drop_with_key(TF * const fort, const void * const key, const size_t keylen) {
@@ -389,11 +395,17 @@ S triefort_exists(TF * const fort, const void * const hash) {
 
   sds path = trie_dir_path(fort, hash, NULL);
 
+  S s;
+
   if (dir_exists(path)) {
-    return triefort_ok;
+    s = triefort_ok;
   } else {
-    return triefort_err_hash_does_not_exist;
+    s = triefort_err_hash_does_not_exist;
   }
+
+  sdsfree(path);
+
+  return s;
 }
 
 S triefort_exists_with_key(TF * const fort, const void * const key, const size_t keylen) {
