@@ -28,6 +28,7 @@ enum triefort_status {
   triefort_err_write_error,
   triefort_err_hash_does_not_exist,
   triefort_err_iterator_done,
+  triefort_err_key_too_long,
 };
 
 /**
@@ -52,8 +53,8 @@ struct triefort_cfg {
   /* The number of bytes each hash contains. Must be >= (depth * width). */
   uint16_t hash_len;
 
-  /* The maximum length of a key. If 0, keys are not allowed. */
-  size_t max_key_len;
+  /* The maximum size of a key. If 0, keys are not allowed. */
+  uint32_t max_key_len;
 
   /* The name of the hash implementation. */
   char hash_name[MAX_LEN_HASH_NAME];

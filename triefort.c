@@ -196,6 +196,10 @@ S triefort_put_with_key(TF * fort,
   NULLCHK(buffer);
   NULLCHK(hash);
 
+  if (keylen > fort->cfg.max_key_len) {
+    return triefort_err_key_too_long;
+  }
+
   triefort_hasher_fn * hfn = fort->hcfg->hasher;
   const size_t hashlen = fort->cfg.hash_len;
 

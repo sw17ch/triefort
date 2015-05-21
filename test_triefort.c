@@ -149,6 +149,27 @@ TEST triefort_put_with_key__uses_key_for_hash(void) {
   char * key = "test key!";
   char * buffer = "test buffer!";
   uint8_t hash_actual[20] = { 0 };
+
+  CHECK_CALL(open_test_triefort(&fort));
+  enum triefort_status s =
+    triefort_put_with_key(
+        fort,
+        key, TEST_MAX_KEY_LEN + 1,
+        buffer, strlen(buffer),
+        hash_actual);
+
+  ASSERT_EQ(triefort_err_key_too_long, s);
+
+  triefort_close(fort);
+  PASS();
+}
+
+TEST triefort_put_with_key__enforces_key_length(void) {
+  struct triefort * fort = NULL;
+
+  char * key = "test key!";
+  char * buffer = "test buffer!";
+  uint8_t hash_actual[20] = { 0 };
   uint8_t hash_expected[20] = { 0 };
 
   CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash_actual));
@@ -539,6 +560,7 @@ SUITE(suite_triefort) {
   RUN_TEST(triefort_destroy__tries_to_make_sure_the_dir_is_a_triefort);
   RUN_TEST(triefort_config_get__retrieves_the_triefort_config);
   RUN_TEST(triefort_put_with_key__uses_key_for_hash);
+  RUN_TEST(triefort_put_with_key__enforces_key_length);
   RUN_TEST(triefort_put__uses_buffer_for_hash);
   RUN_TEST(triefort_put__writes_buffer_data);
   RUN_TEST(triefort_put_with_key__writes_key_data);
