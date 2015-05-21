@@ -186,8 +186,9 @@ enum triefort_status triefort_config_get(
  * triefort_put
  *
  * Write the content in `buffer` to the triefort. The hash of `buffer` will be
- * the identifier for this content in the triefort. `hash` must have enough
- * space to accomodate the hash length defined in the triefort config.
+ * the identifier for this content in the triefort. The computed hash value for
+ * `buffer` will be stored in `hash`. `hash` must be at least as long as the
+ * hash length defined in the triefort config.
  *
  * Returns
  *    - triefort_ok - `buffer` has been written to the triefort and `hash`
@@ -205,8 +206,9 @@ enum triefort_status triefort_put(
  * triefort_put_with_key
  *
  * Write the content in `buffer` to the triefort. The hash of `key` will be the
- * identifier for this content in the triefort. `hash` must have enough space
- * to accomodate the hash length defined in the triefort config.
+ * identifier for this content in the triefort. The computed hash value for
+ * `key` will be stored in `hash`.  `hash` must be at least as long as the hash
+ * length defined in the triefort config.
  *
  * Returns
  *    - triefort_ok - `buffer` has been written to the triefort and `hash`
