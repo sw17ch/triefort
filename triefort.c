@@ -22,7 +22,7 @@
 
 #define PANIC() do { \
   fprintf(stderr, "PANIC: %s:%d\n", __FILE__, __LINE__); \
-  return triefort_err_PANIC; \
+  exit(-254); \
 } while(0)
 #define PANIC_IF(COND) do { if (COND) { PANIC(); } } while(0)
 #define CHECK_CALL(CALL) do { \
@@ -182,11 +182,15 @@ S triefort_put(TF * fort,
   sdata_path = sdscat(sdata_path, "/triefort.data");
 
   S s;
-  if (!file_exists(sdata_path)) {
-    s = write_file(sdata_path, buffer, bufferlen);
-  } else {
+
+  if (file_exists(sdata_path)) {
     s = triefort_err_hash_already_exists;
+  } else {
+    if (!file_exists(sdata_path)) {
+      s = write_file(sdata_path, buffer, bufferlen);
+    }
   }
+
   sdsfree(sdata_path);
 
   return s;
@@ -212,20 +216,28 @@ S triefort_put_with_key(TF * fort,
     return triefort_err_hasher_error;
   }
 
-  sds sdata_path = NULL;
-  PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &sdata_path));
+  S s;
+  sds dir_path = NULL;
+  PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &dir_path));
 
-  sds skey_path = sdsdup(sdata_path);
+  sds skey_path = sdsdup(dir_path);
+  sds sdata_path = sdsdup(dir_path);
+
   sdata_path = sdscat(sdata_path, "/triefort.data");
   skey_path = sdscat(skey_path, "/triefort.key");
 
-  S s = write_file(skey_path, key, keylen);
-  if (triefort_ok == s) {
-    s = write_file(sdata_path, buffer, bufferlen);
+  if (file_exists(sdata_path)) {
+    s = triefort_err_hash_already_exists;
+  } else {
+    S s = write_file(skey_path, key, keylen);
+    if (triefort_ok == s) {
+      s = write_file(sdata_path, buffer, bufferlen);
+    }
   }
 
   sdsfree(skey_path);
   sdsfree(sdata_path);
+  sdsfree(dir_path);
 
   return s;
 }
