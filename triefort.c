@@ -13,6 +13,8 @@
 #include <sys/param.h>
 #include <unistd.h>
 
+#define CONFIG_FILE_NAME ".config"
+
 #define S enum triefort_status
 #define TF struct triefort
 #define CFG struct triefort_cfg
@@ -72,7 +74,7 @@ S triefort_init(const char * const path, const CFG * const cfg) {
   sds cfgpath = sgetcwd();
   cfgpath = sdscat(cfgpath, "/");
   cfgpath = sdscat(cfgpath, path);
-  cfgpath = sdscat(cfgpath, "/config");
+  cfgpath = sdscat(cfgpath, "/" CONFIG_FILE_NAME);
 
   S s = triefort_ok;
   s = store_cfg(cfg, cfgpath);
@@ -91,7 +93,7 @@ S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const
 
   sds fortpath = sdsnew(path);
   sds cfgpath = sdsdup(fortpath);
-  cfgpath = sdscat(cfgpath, "/config");
+  cfgpath = sdscat(cfgpath, "/" CONFIG_FILE_NAME);
 
   if (!dir_exists(fortpath)) {
     s = triefort_err_not_a_triefort;
@@ -139,7 +141,7 @@ S triefort_destroy(char * const path) {
   S s = triefort_ok;
 
   sds spath = sdsnew(path);
-  spath = sdscat(spath, "/config");
+  spath = sdscat(spath, "/" CONFIG_FILE_NAME);
 
   if (!file_exists(spath)) {
     s = triefort_err_not_a_triefort;
