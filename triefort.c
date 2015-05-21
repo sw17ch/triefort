@@ -164,7 +164,7 @@ S triefort_config_get(TF * const fort, const CFG ** cfg) {
 }
 
 S triefort_put(TF * fort,
-    void * const buffer, const size_t bufferlen,
+    const void * const buffer, const size_t bufferlen,
     void * const hash) {
   NULLCHK(fort);
   NULLCHK(buffer);

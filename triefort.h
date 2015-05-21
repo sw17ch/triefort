@@ -197,7 +197,7 @@ enum triefort_status triefort_config_get(
  */
 enum triefort_status triefort_put(
     struct triefort * fort,
-    void * const buffer,
+    const void * const buffer,
     const size_t bufferlen,
     void * const hash);
 
