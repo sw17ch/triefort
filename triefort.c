@@ -95,9 +95,7 @@ S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const
   sds cfgpath = sdsdup(fortpath);
   cfgpath = sdscat(cfgpath, "/" CONFIG_FILE_NAME);
 
-  if (!dir_exists(fortpath)) {
-    s = triefort_err_not_a_triefort;
-  } else if (!file_exists(cfgpath)) {
+  if (!file_exists(cfgpath)) {
     s = triefort_err_not_a_triefort;
   } else {
     *fort = calloc(1, sizeof(**fort));
