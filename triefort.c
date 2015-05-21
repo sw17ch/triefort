@@ -344,7 +344,7 @@ S triefort_get(TF * const fort, void * hash, void * buffer, size_t bufferlen, si
   return triefort_ok;
 }
 
-S triefort_get_with_key(TF * const fort, void * key, size_t keylen, void * buffer, size_t bufferlen, size_t * readlen) {
+S triefort_get_with_key(TF * const fort, const void * const key, size_t keylen, void * buffer, size_t bufferlen, size_t * readlen) {
   NULLCHK(fort);
   NULLCHK(key);
   NULLCHK(buffer);

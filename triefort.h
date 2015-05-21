@@ -350,7 +350,7 @@ enum triefort_status triefort_get(
  */
 enum triefort_status triefort_get_with_key(
     struct triefort * const fort,
-    void * key,
+    const void * const key,
     size_t keylen,
     void * buffer,
     size_t bufferlen,
