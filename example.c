@@ -52,6 +52,7 @@ int main(int argc, char * argv[]) {
     return -1;
   }
 
+  /* Create an iterator and print out all members of the triefort. */
   struct triefort_iter * iter = NULL;
   triefort_iter_create(fort, &iter);
 
@@ -71,6 +72,7 @@ int main(int argc, char * argv[]) {
 
   triefort_iter_free(iter);
 
+  /* Read a line from stdin and add it to the triefort. */
   char * line = NULL;
   size_t linecap = 0;
   uint8_t hash[HASH_LEN] = {0};
@@ -107,7 +109,11 @@ static int hasher(void * hash, const size_t hashlen, const void * buffer, const 
 
 void hash_to_str(uint8_t * hash, char * str, size_t len) {
   snprintf(str, len,
-      "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x"
+      "%02x%02x%02x%02x",
       hash[0],  hash[1],  hash[2],  hash[3],
       hash[4],  hash[5],  hash[6],  hash[7],
       hash[8],  hash[9],  hash[10], hash[11],
