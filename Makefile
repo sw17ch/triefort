@@ -8,6 +8,8 @@ TEST_OBJS=test_triefort.o test_utils.o ${TRIEFORT_OBJS}
 
 ARCHIVE=libtriefort.a
 
+default: example test ${ARCHIVE}
+
 all: example test ${ARCHIVE}
 
 test: ${TEST_OBJS}
