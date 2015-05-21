@@ -181,7 +181,7 @@ S triefort_put(TF * fort,
   PANIC_IF(triefort_ok != mk_trie_dirs(fort, hash, hashlen, &sdata_path));
   sdata_path = sdscat(sdata_path, "/triefort.data");
 
-  S s;
+  S s = triefort_ok;
 
   if (file_exists(sdata_path)) {
     s = triefort_err_hash_already_exists;
@@ -229,7 +229,7 @@ S triefort_put_with_key(TF * fort,
   if (file_exists(sdata_path)) {
     s = triefort_err_hash_already_exists;
   } else {
-    S s = write_file(skey_path, key, keylen);
+    s = write_file(skey_path, key, keylen);
     if (triefort_ok == s) {
       s = write_file(sdata_path, buffer, bufferlen);
     }
