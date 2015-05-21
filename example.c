@@ -1,20 +1,24 @@
 #include "triefort.h"
 
 #include <gcrypt.h>
+#include <getopt.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <getopt.h>
 #include <sys/param.h>
 
 #define TF_PATH "__triefort_example_dir"
 #define HASH_NAME "sha1"
 #define HASH_LEN 20
 
-static int hasher(
-    void * hash,
-    const size_t hashlen,
-    const void * buffer,
-    const size_t bufferlen);
+static int hasher(void * hash, const size_t hashlen, const void * buffer, const size_t bufferlen) {
+  if (hashlen != gcry_md_get_algo_dlen(GCRY_MD_SHA1)) {
+    return -1;
+  }
+
+  gcry_md_hash_buffer(GCRY_MD_SHA1, hash, buffer, bufferlen);
+
+  return 0;
+}
 
 const struct triefort_cfg cfg = {
   .depth = 2,
@@ -29,18 +33,6 @@ const struct triefort_hash_cfg hcfg = {
   .hasher = hasher,
 };
 
-static void hash_to_str(uint8_t * hash, char * str, size_t len);
-static void str_to_hash(const char * const str, const size_t slen, uint8_t * const hash, const size_t hlen);
-static void print_usage(const char * const name);
-
-static int get_by_hash(const char * const hashstr);
-static int get_by_key(const char * const keystr);
-static int put(const void * const data, size_t datalen);
-static int put_by_key(const char * const key, const void * const data, size_t datalen);
-static int list_all(void);
-
-static struct triefort * init(void);
-
 enum mode {
   MODE_UNDEFINED,
   MODE_USAGE,
@@ -50,6 +42,18 @@ enum mode {
   MODE_PUT,
   MODE_PUT_BY_KEY,
 };
+
+static void hash_to_str(uint8_t * hash, char * str, size_t len);
+static void str_to_hash(const char * const str, const size_t slen, uint8_t * const hash, const size_t hlen);
+
+static int get_by_hash(const char * const hashstr);
+static int get_by_key(const char * const keystr);
+static int put(const void * const data, size_t datalen);
+static int put_by_key(const char * const key, const void * const data, size_t datalen);
+static int list_all(void);
+static void print_usage(const char * const name);
+
+static struct triefort * init(void);
 
 int main(int argc, char * argv[]) {
   enum mode mode = MODE_UNDEFINED;
@@ -121,18 +125,6 @@ int main(int argc, char * argv[]) {
   case MODE_LIST:
     result = list_all();
     break;
-  }
-
-  return 0;
-}
-
-static int hasher(void * hash, const size_t hashlen, const void * buffer, const size_t bufferlen) {
-  const int algo = GCRY_MD_SHA1;
-
-  if (hashlen != gcry_md_get_algo_dlen(algo)) {
-    return -1;
-  } else {
-    gcry_md_hash_buffer(algo, hash, buffer, bufferlen);
   }
 
   return 0;
