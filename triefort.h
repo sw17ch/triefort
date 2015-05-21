@@ -13,6 +13,7 @@
  *
  * Return codes for triefort library functions.
  *
+ * All status codes but `triefort_ok` indicate a failure or negative result.
  * `triefort_ok` will always have a value of 0.
  */
 enum triefort_status {
