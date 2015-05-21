@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <getopt.h>
+#include <sys/param.h>
 
 #define TF_PATH "__triefort_example_dir"
 #define HASH_NAME "sha1"
@@ -29,6 +30,7 @@ const struct triefort_hash_cfg hcfg = {
 };
 
 static void hash_to_str(uint8_t * hash, char * str, size_t len);
+static void str_to_hash(const char * const str, const size_t slen, uint8_t * const hash, const size_t hlen);
 static void print_usage(const char * const name);
 
 static int get_by_hash(const char * const hashstr);
@@ -150,6 +152,14 @@ static void hash_to_str(uint8_t * hash, char * str, size_t len) {
       hash[16], hash[17], hash[18], hash[19]);
 }
 
+static void str_to_hash(const char * const str, const size_t slen, uint8_t * const hash, const size_t hlen) {
+  size_t bytes = MIN(slen / 2, hlen);
+
+  for(size_t i = 0; i < bytes; i++) {
+    sscanf(&str[i * 2], "%02hhx", &hash[i]);
+  }
+}
+
 static void print_usage(const char * const name) {
   fprintf(stderr, "usage %s [-h] [-g hash] [-G key] [-p data] [-k key -P data]\n"
                   "\n"
@@ -167,13 +177,49 @@ static void print_usage(const char * const name) {
 }
 
 static int get_by_hash(const char * const hashstr) {
-  (void)hashstr;
-  return 0;
+  uint8_t hash[20] = {0};
+  struct triefort_info * info = NULL;
+  struct triefort * f = init();
+
+  if (NULL == f) { return 255; }
+
+  str_to_hash(hashstr, strlen(hashstr), hash, sizeof(hash));
+
+  enum triefort_status s = triefort_info(f, hash, &info);
+
+  if (triefort_ok != s) {
+    fprintf(stderr, "Error during `%s`: %d\n", __FUNCTION__, s);
+  } else {
+    char * data = calloc(1, info->length + 1);
+    size_t readlen = 0;
+    s = triefort_get(f, hash, data, info->length, &readlen);
+    fputs(data, stdout);
+    free(data);
+  }
+
+  return s;
 }
 
 static int get_by_key(const char * const keystr) {
-  (void)keystr;
-  return 0;
+  size_t keylen = strlen(keystr);
+  struct triefort_info * info = NULL;
+  struct triefort * f = init();
+
+  if (NULL == f) { return 255; }
+
+  enum triefort_status s = triefort_info_with_key(f, keystr, keylen, &info);
+
+  if (triefort_ok != s) {
+    fprintf(stderr, "Error during `%s`: %d\n", __FUNCTION__, s);
+  } else {
+    char * data = calloc(1, info->length + 1);
+    size_t readlen = 0;
+    s = triefort_get_with_key(f, keystr, keylen, data, info->length, &readlen);
+    fputs(data, stdout);
+    free(data);
+  }
+
+  return s;
 }
 
 static int put(const void * const data, size_t datalen) {
