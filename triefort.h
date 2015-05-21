@@ -165,6 +165,8 @@ enum triefort_status triefort_close(
  * Returns
  *    - triefort_ok - the triefort at `path` was destroyed.
  *    - triefort_err_not_a_triefort - `path` does not reference a triefort.
+ *    - triefort_err_path_could_not_be_destroyed - `path` exists and has a
+ *    .config file, but couldn't be removed by the OS.
  */
 enum triefort_status triefort_destroy(
     char * const path);
