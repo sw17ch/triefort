@@ -357,7 +357,7 @@ enum triefort_status triefort_get_with_key(
     size_t * readlen);
 
 /**
- * TODO: triefort_drop
+ * triefort_drop
  *
  * Drop a hash and its data from the triefort.
  *
@@ -371,7 +371,7 @@ enum triefort_status triefort_drop(
     const void * const hash);
 
 /**
- * TODO: triefort_drop_with_key
+ * triefort_drop_with_key
  *
  * Drop a key and its data from the triefort.
  *
@@ -386,7 +386,7 @@ enum triefort_status triefort_drop_with_key(
     const size_t keylen);
 
 /**
- * TODO: triefort_exists
+ * triefort_exists
  *
  * Check if a hash is present in the triefort.
  *
@@ -399,7 +399,7 @@ enum triefort_status triefort_exists(
     const void * const hash);
 
 /**
- * TODO: triefort_exists
+ * triefort_exists
  *
  * Check if a key is present in the triefort.
  *

@@ -415,6 +415,62 @@ TEST triefort_get_with_key__reads_out_the_stored_data(void) {
   PASS();
 }
 
+TEST triefort_drop__removes_a_hash(void) {
+  struct triefort * fort = NULL;
+
+  char * key = "test key!";
+  char buffer[] = "test buffer!";
+  uint8_t hash[20] = { 0 };
+
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
+  ASSERT_EQ(triefort_ok, triefort_drop(fort, hash));
+  ASSERT_EQ(triefort_err_hash_does_not_exist, triefort_drop(fort, hash));
+
+  triefort_close(fort);
+  PASS();
+}
+
+TEST triefort_drop_with_key__removes_a_hash(void) {
+  struct triefort * fort = NULL;
+
+  char * key = "test key!";
+  char buffer[] = "test buffer!";
+  uint8_t hash[20] = { 0 };
+
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
+  ASSERT_EQ(triefort_ok, triefort_drop_with_key(fort, key, strlen(key)));
+  ASSERT_EQ(triefort_err_hash_does_not_exist, triefort_drop_with_key(fort, key, strlen(key)));
+
+  triefort_close(fort);
+  PASS();
+}
+
+TEST triefort_exists__is_ok_when_hash_exists(void) {
+  struct triefort * fort = NULL;
+
+  char * key = "test key!";
+  char buffer[] = "test buffer!";
+  uint8_t hash[20] = { 0 };
+
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
+  ASSERT_EQ(triefort_ok, triefort_exists(fort, hash));
+
+  PASS();
+}
+
+TEST triefort_exists_with_key__is_ok_when_hash_exists(void) {
+  struct triefort * fort = NULL;
+
+  char * key = "test key!";
+  char buffer[] = "test buffer!";
+  uint8_t hash[20] = { 0 };
+
+  CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
+  ASSERT_EQ(triefort_ok, triefort_exists_with_key(fort, key, strlen(key)));
+
+  PASS();
+}
+
 TEST triefort_iter_create__makes_a_new_iterator(void) {
   char * key = "iter test!";
   char buffer[] = "some buffer for testing iterators.";
@@ -555,6 +611,10 @@ SUITE(suite_triefort) {
   RUN_TEST(triefort_get_stream_with_key__opens_a_file_handle);
   RUN_TEST(triefort_get__reads_out_the_stored_data);
   RUN_TEST(triefort_get_with_key__reads_out_the_stored_data);
+  RUN_TEST(triefort_drop__removes_a_hash);
+  RUN_TEST(triefort_drop_with_key__removes_a_hash);
+  RUN_TEST(triefort_exists__is_ok_when_hash_exists);
+  RUN_TEST(triefort_exists_with_key__is_ok_when_hash_exists);
   RUN_TEST(triefort_iter_create__makes_a_new_iterator);
   RUN_TEST(triefort_iter_create__points_to_the_first_entry);
   RUN_TEST(triefort_iter_reset__moves_the_iterator_to_the_beginning);
