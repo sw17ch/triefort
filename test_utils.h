@@ -13,7 +13,7 @@
 #define TEST_TRIE_DEPTH 2
 #define TEST_HASH_LEN 20
 #define TEST_HASH_NAME "testhash"
-#define TEST_MAX_KEY_LEN 64
+#define TEST_MAX_KEY_LEN 16
 
 int recursive_remove(const char * const path);
 bool dir_exists(const char * const path);

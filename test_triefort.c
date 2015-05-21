@@ -143,7 +143,7 @@ TEST triefort_config_get__retrieves_the_triefort_config(void) {
   PASS();
 }
 
-TEST triefort_put_with_key__uses_key_for_hash(void) {
+TEST triefort_put_with_key__enforces_key_length(void) {
   struct triefort * fort = NULL;
 
   char * key = "test key!";
@@ -164,7 +164,7 @@ TEST triefort_put_with_key__uses_key_for_hash(void) {
   PASS();
 }
 
-TEST triefort_put_with_key__enforces_key_length(void) {
+TEST triefort_put_with_key__uses_key_for_hash(void) {
   struct triefort * fort = NULL;
 
   char * key = "test key!";
@@ -291,16 +291,8 @@ TEST triefort_info_with_key__gets_info_about_the_key(void) {
 
   CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
 
-  enum triefort_status s =
-    triefort_put_with_key(
-      fort,
-      key, sizeof(key),
-      buffer, sizeof(buffer),
-      hash);
-  ASSERT_EQ(triefort_ok, s);
-
   struct triefort_info * info = NULL;
-  s = triefort_info_with_key(fort, key, strlen(key), &info);
+  enum triefort_status s = triefort_info_with_key(fort, key, strlen(key), &info);
   ASSERT_EQ(triefort_ok, s);
   ASSERT(info != NULL);
 
@@ -352,13 +344,6 @@ TEST triefort_get_stream_with_key__opens_a_file_handle(void) {
   uint8_t hash[20] = { 0 };
 
   CHECK_CALL(open_test_triefort_with_data(&fort, key, buffer, hash));
-
-  s = triefort_put_with_key(
-      fort,
-      key, strlen(key),
-      buffer, strlen(buffer),
-      hash);
-  ASSERT_EQ(triefort_ok, s);
 
   // make sure we get a stream
   FILE * stream = NULL;
