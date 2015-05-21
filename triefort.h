@@ -12,9 +12,11 @@
  * enum triefort_status
  *
  * Return codes for triefort library functions.
+ *
+ * `triefort_ok` will always have a value of 0.
  */
 enum triefort_status {
-  triefort_ok,
+  triefort_ok = 0,
 
   triefort_err_PANIC,
   triefort_err_NULL_PTR,
