@@ -3,12 +3,14 @@
 
 #include "triefort.h"
 
+#include "sds.h"
+
 #include <fts.h>
 #include <stdbool.h>
 
 struct triefort {
   /* Path from the root to the triefort. */
-  const char * path;
+  sds path;
 
   /* Hash function configuration. */
   const struct triefort_hash_cfg * hcfg;

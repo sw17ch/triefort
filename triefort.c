@@ -1,6 +1,8 @@
 #include "triefort.h"
 #include "triefort_internal_types.h"
 
+#include "sds.h"
+
 #include <errno.h>
 #include <fts.h>
 #include <stdbool.h>
@@ -8,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 #include <unistd.h>
 
 #define S enum triefort_status
@@ -47,6 +50,7 @@ static char * mk_hash_str(const void * const hash, const size_t hashlen);
 static void mk_hash_from_hex_str(const char * const str, void * const hash, const size_t hashlen);
 static S write_file(const char * const filename, const void * const data, const size_t datalen);
 static char * trie_dir_path(const TF * const fort, const void * const hash, const char * filename);
+static sds sgetcwd(void);
 
 S triefort_init(const char * const path, const CFG * const cfg) {
   if (0 == validate_cfg(cfg)) {
@@ -64,15 +68,17 @@ S triefort_init(const char * const path, const CFG * const cfg) {
     }
   }
 
-  const char * oldcwd = getcwd(NULL, 0);
-  {
-    PANIC_IF(chdir(path) != 0);
-    CHECK_CALL(store_cfg(cfg, "config"));
-    PANIC_IF(chdir(oldcwd) != 0);
-  }
-  free((void*)oldcwd);
+  sds cfgpath = sgetcwd();
+  cfgpath = sdscat(cfgpath, "/");
+  cfgpath = sdscat(cfgpath, path);
+  cfgpath = sdscat(cfgpath, "/config");
 
-  return triefort_ok;
+  S s = triefort_ok;
+  s = store_cfg(cfg, cfgpath);
+
+  sdsfree(cfgpath);
+
+  return s;
 }
 
 S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const path) {
@@ -80,22 +86,26 @@ S triefort_open(TF ** const fort, const HCFG * const hashcfg, const char * const
   NULLCHK(hashcfg);
   NULLCHK(path);
 
-  const char * oldcwd = getcwd(NULL, 0);
-  {
-    if (0 != chdir(path)) {
-      return triefort_err_not_a_triefort;
-    }
+  sds cfgpath = sgetcwd();
+  cfgpath = sdscat(cfgpath, "/");
+  cfgpath = sdscat(cfgpath, path);
+  sds fortpath = sdsdup(cfgpath);
+  cfgpath = sdscat(cfgpath, "/config");
 
-    *fort = calloc(1, sizeof(**fort));
-    TF * f = *fort;
-
-    f->path = getcwd(NULL, 0);
-    f->hcfg = hashcfg;
-    CHECK_CALL(load_cfg(&f->cfg, "config"));
-
-    PANIC_IF(chdir(oldcwd) != 0);
+  if (!dir_exists(fortpath)) {
+    return triefort_err_not_a_triefort;
   }
-  free((void *)oldcwd);
+
+  if (!file_exists(cfgpath)) {
+    return triefort_err_not_a_triefort;
+  }
+
+  *fort = calloc(1, sizeof(**fort));
+  TF * f = *fort;
+
+  f->path = fortpath;
+  f->hcfg = hashcfg;
+  CHECK_CALL(load_cfg(&f->cfg, cfgpath));
 
   S s = triefort_ok;
 
@@ -119,7 +129,7 @@ S triefort_close(TF * fort) {
   NULLCHK(fort);
   NULLCHK(fort->path);
 
-  free((void *)fort->path);
+  sdsfree(fort->path);
   free(fort);
 
   return triefort_ok;
@@ -128,27 +138,18 @@ S triefort_close(TF * fort) {
 S triefort_destroy(char * const path) {
   S s = triefort_ok;
 
-  char * oldcwd = getcwd(NULL, 0);
-  {
-    if (dir_exists(path)) {
-      PANIC_IF(chdir(path) != 0);
+  sds spath = sdsnew(path);
+  spath = sdscat(spath, "/config");
 
-      if (!file_exists("config")) {
-        s = triefort_err_not_a_triefort;
-      }
-
-      PANIC_IF(chdir(oldcwd) != 0);
-    } else {
-      return triefort_err_not_a_triefort;
-    }
-
-    if (s == triefort_ok) {
-      if (0 != recursive_remove(path)) {
-        s = triefort_err_path_could_not_be_destroyed;
-      }
+  if (!file_exists(spath)) {
+    s = triefort_err_not_a_triefort;
+  } else {
+    if (0 != recursive_remove(path)) {
+      s = triefort_err_path_could_not_be_destroyed;
     }
   }
-  free((void *)oldcwd);
+
+  sdsfree(spath);
 
   return s;
 }
@@ -723,4 +724,11 @@ static S write_file(const char * const filename, const void * const data, const 
   }
 
   return triefort_ok;
+}
+
+static sds sgetcwd(void) {
+  char * c = getcwd(NULL,0);
+  sds s = sdsnew(c);
+  free(c);
+  return s;
 }
