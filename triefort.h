@@ -145,6 +145,9 @@ enum triefort_status triefort_init(
  * Returns
  *    - triefort_ok - the triefort was opened successfull
  *    - triefort_err_not_a_triefort - the path is not a triefort
+ *    - triefort_err_invalid_config - the config was invalid
+ *    - triefort_err_hash_name_mismatch - the hash name in the config does not
+ *      match the hash name in `hashcfg`.
  */
 enum triefort_status triefort_open(
     struct triefort ** const fort,
