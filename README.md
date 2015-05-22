@@ -8,23 +8,22 @@ trees of arbitrary hashes.
 ```
 /triefort
 | /config
-| /store
-| | /ab
-| | | /4e
-| | | | /ab4ec9a2
-| | | | | /trifort.data
-| | | /a9
-| | | | /aba9aacf
-| | | | | /trifort.key
-| | | | | /trifort.data
-| | /3c
-| | | /d1
-| | | | /3cd1002a
-| | | | | /trifort.data
-| | /4c
-| | | /02
-| | | | /4c02c3c8
-| | | | | /trifort.data
+| /ab
+| | /4e
+| | | /ab4ec9a2
+| | | | /trifort.data
+| | /a9
+| | | /aba9aacf
+| | | | /trifort.key
+| | | | /trifort.data
+| /3c
+| | /d1
+| | | /3cd1002a
+| | | | /trifort.data
+| /4c
+| | /02
+| | | /4c02c3c8
+| | | | /trifort.data
 ```
 
 The `config` file encodes three parameters:
