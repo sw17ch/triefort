@@ -135,7 +135,7 @@ S triefort_close(TF * fort) {
   return triefort_ok;
 }
 
-S triefort_destroy(char * const path) {
+S triefort_destroy(const char * const path) {
   S s = triefort_ok;
 
   sds spath = sdsnew(path);

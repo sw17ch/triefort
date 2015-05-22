@@ -175,7 +175,7 @@ enum triefort_status triefort_close(
  *    .config file, but couldn't be removed by the OS.
  */
 enum triefort_status triefort_destroy(
-    char * const path);
+    const char * const path);
 
 /**
  * triefort_config_get
