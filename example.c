@@ -127,7 +127,7 @@ int main(int argc, char * argv[]) {
     break;
   }
 
-  return 0;
+  return result;
 }
 
 static void hash_to_str(uint8_t * hash, char * str, size_t len) {

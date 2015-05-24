@@ -434,14 +434,12 @@ S triefort_iter_create(TF * const fort, ITER ** const iter) {
 
 S triefort_iter_next(ITER * const iter) {
   FTSENT * ent;
-  int e = 0;
 
   while((ent = fts_read(iter->fts))) {
     switch(ent->fts_info) {
     case FTS_NS: case FTS_DNR: case FTS_ERR:
       fprintf(stderr, "%s: fts_read error: %s\n",
           ent->fts_accpath, strerror(ent->fts_errno));
-      e = ent->fts_errno;
       break;
     case FTS_F:  case FTS_DC: case FTS_DOT:    case FTS_NSOK:
     case FTS_DP: case FTS_SL: case FTS_SLNONE: case FTS_DEFAULT:
@@ -758,7 +756,7 @@ static void mk_hash_from_hex_str(const char * const str, void * const hash, cons
 }
 
 static S write_file(const char * const filename, const void * const data, const size_t datalen) {
-  S s;
+  S s = triefort_ok;
 
   if (file_exists(filename)) {
     s = triefort_err_path_already_exists;
@@ -772,7 +770,7 @@ static S write_file(const char * const filename, const void * const data, const 
     fclose(fh);
   }
 
-  return triefort_ok;
+  return s;
 }
 
 static sds sgetcwd(void) {
