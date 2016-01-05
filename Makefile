@@ -16,12 +16,13 @@ test: ${TEST_OBJS}
 	${CC} $^ -o $@
 
 example: ${EXAMPLE_OBJS}
-	${CC} -lgcrypt $^ -o $@
+	${CC} `libgcrypt-config --libs` $^ -o $@
 
 ${ARCHIVE}: sds.o triefort.o
 	ar cr libtriefort.a $^
 
 example.o: example.c triefort.h
+	${CC} `libgcrypt-config --cflags` -c $< -o $@
 sds.o: sds.h sds.c
 test_triefort.o: triefort.h triefort_internal_types.h test_triefort.c
 test_utils.o: triefort.h test_utils.h test_utils.c
